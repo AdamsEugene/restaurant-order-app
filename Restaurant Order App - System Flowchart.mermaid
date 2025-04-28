@@ -1,0 +1,56 @@
+flowchart TD
+    subgraph "User Flow"
+        A[User Opens App] --> B[Browse Restaurants]
+        B --> C[Select Restaurant]
+        C --> D[Browse Menu Categories]
+        D --> E[Select Menu Items]
+        E --> F[Customize Order]
+        F --> G[Review Order]
+        G --> H{Payment Method?}
+        H -->|In-App Payment| I[Process Payment]
+        H -->|Manual Payment| J[Generate Pending Order]
+        I --> K[Generate Receipt/Order Code]
+        J --> K
+        K --> L[Track Order Status]
+        L --> M[Receive Food]
+        M --> N[Submit Receipt Code]
+        N --> O[Complete Order]
+    end
+
+    subgraph "Admin Flow"
+        AA[Admin Login] --> BB[Dashboard]
+        BB --> CC[Manage Menu]
+        BB --> DD[View Orders]
+        DD --> EE[New Orders Notification]
+        EE --> FF[Accept/Reject Order]
+        FF -->|Accept| GG[Update Order Status]
+        FF -->|Reject| HH[Send Rejection Notice]
+        GG --> II[Prepare Order]
+        II --> JJ[Mark Order Ready]
+        JJ --> KK[Verify Receipt Code]
+        KK --> LL[Mark Order Completed]
+        
+        BB --> MM[Analytics & Reports]
+        BB --> NN[Manage Restaurant Profile]
+        BB --> OO[Manage Staff Access]
+    end
+
+    subgraph "Backend Processing"
+        ZA[API Gateway] --> ZB[Authentication Service]
+        ZA --> ZC[Order Service]
+        ZA --> ZD[Restaurant Service]
+        ZA --> ZE[Payment Service]
+        ZA --> ZF[Notification Service]
+        
+        ZC --> ZG[Order Database]
+        ZD --> ZH[Restaurant Database]
+        ZE --> ZI[Payment Processing]
+        ZF --> ZJ[Push Notifications]
+        ZF --> ZK[Email Service]
+        ZF --> ZL[SMS Service]
+    end
+
+    K -.-> ZC
+    FF -.-> ZF
+    I -.-> ZE
+    C -.-> ZD

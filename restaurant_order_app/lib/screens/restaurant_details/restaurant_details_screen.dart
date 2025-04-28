@@ -1,0 +1,367 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../blocs/restaurant/restaurant_bloc.dart';
+import '../../models/restaurant.dart';
+import '../../repositories/restaurant/restaurant_repository.dart';
+
+class RestaurantDetailsScreen extends StatefulWidget {
+  final String restaurantId;
+
+  const RestaurantDetailsScreen({
+    Key? key,
+    required this.restaurantId,
+  }) : super(key: key);
+
+  @override
+  State<RestaurantDetailsScreen> createState() => _RestaurantDetailsScreenState();
+}
+
+class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
+  late Restaurant? restaurant;
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRestaurantDetails();
+  }
+
+  Future<void> _loadRestaurantDetails() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final restaurantRepository = context.read<RestaurantRepository>();
+      restaurant = await restaurantRepository.fetchRestaurantById(widget.restaurantId);
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        errorMessage = e.toString();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 200,
+            pinned: true,
+            leading: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.arrow_back),
+              ),
+              onPressed: () => context.pop(),
+            ),
+            actions: [
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    restaurant?.isFavorite ?? false
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                    color: restaurant?.isFavorite ?? false
+                        ? Colors.red
+                        : Colors.grey,
+                  ),
+                ),
+                onPressed: () {
+                  if (restaurant != null) {
+                    context.read<RestaurantBloc>().add(
+                      ToggleFavorite(restaurantId: restaurant!.id),
+                    );
+                    setState(() {
+                      restaurant = restaurant!.copyWith(
+                        isFavorite: !restaurant!.isFavorite,
+                      );
+                    });
+                  }
+                },
+              ),
+              const SizedBox(width: 16),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: isLoading || restaurant == null
+                  ? Container(color: Colors.grey[300])
+                  : Image.network(
+                      restaurant!.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[300],
+                          child: const Center(
+                            child: Icon(Icons.error_outline, size: 48),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: isLoading
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : errorMessage != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error: $errorMessage',
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _loadRestaurantDetails,
+                                child: const Text('Try Again'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : restaurant == null
+                        ? const SizedBox.shrink()
+                        : Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Restaurant name and rating
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        restaurant!.name,
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green[50],
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.star,
+                                            color: Colors.amber,
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            restaurant!.rating.toString(),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                
+                                // Cuisine type
+                                Text(
+                                  restaurant!.cuisineType,
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                
+                                // Address
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on_outlined,
+                                      color: Colors.grey,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        restaurant!.address,
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                
+                                // Description
+                                const Text(
+                                  'Description',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  restaurant!.description,
+                                  style: TextStyle(
+                                    color: Colors.grey[800],
+                                    fontSize: 14,
+                                    height: 1.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                
+                                // Menu section
+                                const Text(
+                                  'Menu',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+
+                                // Menu items list
+                                if (restaurant!.menu.isEmpty)
+                                  const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(32.0),
+                                      child: Text('No menu items available'),
+                                    ),
+                                  )
+                                else
+                                  ListView.separated(
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    shrinkWrap: true,
+                                    itemCount: restaurant!.menu.length,
+                                    separatorBuilder: (context, index) =>
+                                        const Divider(),
+                                    itemBuilder: (context, index) {
+                                      final menuItem = restaurant!.menu[index];
+                                      return ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        leading: ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Image.network(
+                                            menuItem.imageUrl,
+                                            width: 60,
+                                            height: 60,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return Container(
+                                                width: 60,
+                                                height: 60,
+                                                color: Colors.grey[300],
+                                                child: const Icon(
+                                                  Icons.restaurant,
+                                                  color: Colors.white,
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        title: Text(
+                                          menuItem.name,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                          menuItem.description,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                        trailing: Text(
+                                          '\$${menuItem.price.toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ),
+          ),
+        ],
+      ),
+      floatingActionButton: !isLoading && restaurant != null
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                // Navigate to cart or add to cart functionality
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Added to cart'),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.shopping_cart),
+              label: const Text('Add to Cart'),
+            )
+          : null,
+    );
+  }
+} 
