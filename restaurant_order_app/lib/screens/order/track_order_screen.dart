@@ -65,67 +65,219 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Track Your Order'),
+        backgroundColor: Colors.deepOrange,
+        foregroundColor: Colors.white,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/receipt/${widget.orderId}', extra: widget.orderDetails),
+        ),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Order ID and Restaurant
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: Colors.grey.shade50,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Order ID and Restaurant info
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Row(
                 children: [
-                  Text(
-                    'Order #${widget.orderId}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  // Order ID
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Order ID',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '#${widget.orderId}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    widget.orderDetails['restaurantName'] as String? ?? 'Restaurant',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade700,
+                  // Restaurant
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Restaurant',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.orderDetails['restaurantName'] as String? ?? 'Restaurant',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              
-              const SizedBox(height: 32),
-              
-              // Current status
-              Text(
-                _statusMessages[_currentStep],
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Current status with icon
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: _getStatusIconColor().withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _getStatusIcon(),
+                      color: _getStatusIconColor(),
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _statusMessages[_currentStep],
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _statusDescriptions[_currentStep],
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 40),
+            
+            // Progress tracker
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: List.generate(_statusMessages.length, (index) {
+                  final bool isActive = index <= _currentStep;
+                  return Expanded(
+                    child: Column(
+                      children: [
+                        // Circle
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: isActive 
+                                ? Colors.deepOrange 
+                                : Colors.grey.shade300,
+                            shape: BoxShape.circle,
+                          ),
+                          child: isActive 
+                              ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 16,
+                                )
+                              : null,
+                        ),
+                        
+                        // Line (except for last item)
+                        if (index < _statusMessages.length - 1)
+                          Container(
+                            height: 2,
+                            color: index < _currentStep 
+                                ? Colors.deepOrange 
+                                : Colors.grey.shade300,
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            ),
+            
+            const SizedBox(height: 100),
+            
+            // Estimated time
+            if (!_isOrderReady)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.deepOrange.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.access_time,
+                        color: Colors.deepOrange,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Estimated Time',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${15 - (_currentStep * 5)} minutes remaining',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              
-              const SizedBox(height: 8),
-              
-              // Status description
-              Text(
-                _statusDescriptions[_currentStep],
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-              
-              const SizedBox(height: 40),
-              
-              // Progress stepper
-              _buildOrderStepper(),
-              
-              const Spacer(),
-              
-              // Pickup order button (visible only when order is ready)
-              if (_isOrderReady)
-                SizedBox(
+            
+            // Pickup button (when ready)
+            if (_isOrderReady)
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: SizedBox(
                   width: double.infinity,
                   child: PrimaryButton(
                     text: 'Pickup Order',
@@ -134,120 +286,56 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                     },
                   ),
                 ),
-                
-              // Estimated time (visible when order is not ready)
-              if (!_isOrderReady)
-                _buildEstimatedTimeCard(),
-                
-              const SizedBox(height: 16),
-              
-              // Cancel order button (only visible when order is not ready)
-              if (!_isOrderReady)
-                SizedBox(
+              ),
+            
+            // Cancel order button
+            if (!_isOrderReady)
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: SizedBox(
                   width: double.infinity,
+                  height: 50,
                   child: OutlinedButton(
                     onPressed: () {
                       _showCancelConfirmationDialog();
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      foregroundColor: Colors.deepOrange,
+                      side: const BorderSide(color: Colors.deepOrange),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text('Cancel Order'),
+                    child: const Text(
+                      'Cancel Order',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
   }
   
-  Widget _buildOrderStepper() {
-    return Column(
-      children: List.generate(_statusMessages.length, (index) {
-        final bool isActive = index <= _currentStep;
-        
-        return Row(
-          children: [
-            // Status circle
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isActive ? AppTheme.primaryColor : Colors.grey.shade300,
-              ),
-              child: isActive
-                  ? const Icon(
-                      Icons.check,
-                      color: Colors.white,
-                      size: 16,
-                    )
-                  : null,
-            ),
-            
-            // Horizontal line (except for last item)
-            if (index < _statusMessages.length - 1)
-              Expanded(
-                child: Container(
-                  height: 2,
-                  color: index < _currentStep
-                      ? AppTheme.primaryColor
-                      : Colors.grey.shade300,
-                ),
-              ),
-              
-            // Spacer for last item
-            if (index == _statusMessages.length - 1)
-              const Spacer(),
-          ],
-        );
-      }),
-    );
+  IconData _getStatusIcon() {
+    switch (_currentStep) {
+      case 0:
+        return Icons.receipt_long;
+      case 1:
+        return Icons.restaurant;
+      case 2:
+        return Icons.local_dining;
+      case 3:
+        return Icons.check_circle;
+      default:
+        return Icons.access_time;
+    }
   }
   
-  Widget _buildEstimatedTimeCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.access_time,
-            color: AppTheme.primaryColor,
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Estimated Time',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              Text(
-                '${15 - (_currentStep * 5)} minutes',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+  Color _getStatusIconColor() {
+    return Colors.deepOrange;
   }
   
   void _showCancelConfirmationDialog() {

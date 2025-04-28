@@ -45,6 +45,13 @@ class _OrderCompleteScreenState extends State<OrderCompleteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Order Complete'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/home'),
+        ),
+      ),
       body: SafeArea(
         child: Stack(
           alignment: Alignment.topCenter,

@@ -75,6 +75,10 @@ class _SubmitReceiptCodeScreenState extends State<SubmitReceiptCodeScreen> {
       appBar: AppBar(
         title: const Text('Verify Receipt Code'),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/order-tracking/${widget.orderId}', extra: widget.orderDetails),
+        ),
       ),
       body: SafeArea(
         child: Padding(
