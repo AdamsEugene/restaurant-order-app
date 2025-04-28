@@ -24,6 +24,13 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoadingRestaurants = true;
   String? errorMessage;
   
+  // For filters
+  double _minRating = 0.0;
+  List<String> _selectedCuisines = [];
+  int _maxDeliveryTime = 60;
+  bool _freeDeliveryOnly = false;
+  List<String> _availableCuisineTypes = [];
+  
   // For promotions
   final List<Map<String, dynamic>> promotions = [
     {
@@ -160,9 +167,16 @@ class _HomeScreenState extends State<HomeScreen> {
       final apiService = RestaurantApiService(httpClient: http.Client());
       final loadedRestaurants = await apiService.fetchRestaurants();
       
+      // Extract unique cuisine types for filter
+      Set<String> cuisineTypes = {};
+      for (var restaurant in loadedRestaurants) {
+        cuisineTypes.add(restaurant.cuisineType);
+      }
+      
       setState(() {
         restaurants = loadedRestaurants;
         _filteredRestaurants = loadedRestaurants;
+        _availableCuisineTypes = cuisineTypes.toList()..sort();
         isLoadingRestaurants = false;
       });
     } catch (e) {
@@ -173,30 +187,70 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Search restaurants based on query
-  void _searchRestaurants(String query) {
-    setState(() {
-      _searchQuery = query.trim();
-      _isSearching = _searchQuery.isNotEmpty;
-      
-      if (_searchQuery.isEmpty) {
-        _filteredRestaurants = restaurants;
-      } else {
-        _filteredRestaurants = restaurants.where((restaurant) {
-          return restaurant.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                 restaurant.cuisineType.toLowerCase().contains(_searchQuery.toLowerCase());
-        }).toList();
-      }
-    });
-  }
-
   // Clear search
   void _clearSearch() {
     _searchController.clear();
     setState(() {
       _searchQuery = '';
       _isSearching = false;
-      _filteredRestaurants = restaurants;
+      _filteredRestaurants = _applyFilters(restaurants);
+    });
+  }
+  
+  // Apply filters to restaurants
+  List<Restaurant> _applyFilters(List<Restaurant> restaurantList) {
+    return restaurantList.where((restaurant) {
+      // Apply rating filter
+      if (restaurant.rating < _minRating) return false;
+      
+      // Apply cuisine filter
+      if (_selectedCuisines.isNotEmpty && 
+          !_selectedCuisines.contains(restaurant.cuisineType)) return false;
+      
+      // Apply delivery time filter
+      if (restaurant.deliveryTime > _maxDeliveryTime) return false;
+      
+      // Apply free delivery filter
+      if (_freeDeliveryOnly && restaurant.deliveryFee > 0) return false;
+      
+      return true;
+    }).toList();
+  }
+  
+  // Reset all filters to default values
+  void _resetFilters() {
+    setState(() {
+      _minRating = 0.0;
+      _selectedCuisines = [];
+      _maxDeliveryTime = 60;
+      _freeDeliveryOnly = false;
+      _filteredRestaurants = _isSearching 
+          ? _searchRestaurantsInternal(_searchQuery)
+          : restaurants;
+    });
+  }
+  
+  // Internal search method that returns filtered list without setting state
+  List<Restaurant> _searchRestaurantsInternal(String query) {
+    if (query.isEmpty) {
+      return restaurants;
+    } else {
+      return restaurants.where((restaurant) {
+        return restaurant.name.toLowerCase().contains(query.toLowerCase()) ||
+               restaurant.cuisineType.toLowerCase().contains(query.toLowerCase());
+      }).toList();
+    }
+  }
+  
+  // Search restaurants based on query
+  void _searchRestaurants(String query) {
+    setState(() {
+      _searchQuery = query.trim();
+      _isSearching = _searchQuery.isNotEmpty;
+      
+      // First search, then apply filters
+      List<Restaurant> searchResults = _searchRestaurantsInternal(_searchQuery);
+      _filteredRestaurants = _applyFilters(searchResults);
     });
   }
 
@@ -713,9 +767,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (!_isSearching)
                         FadeInRight(
                           child: TextButton.icon(
-                            onPressed: () {
-                              // Filter options
-                            },
+                            onPressed: _showFilterBottomSheet,
                             icon: const Icon(Icons.tune, size: 18),
                             label: const Text('Filter'),
                           ),
@@ -1517,269 +1569,285 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Build the mini cart sheet
   Widget _buildMiniCartSheet(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      height: MediaQuery.of(context).size.height * 0.6,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return StatefulBuilder(
+      builder: (context, setModalState) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Your Cart',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // Cart items
-          _cartItems.isEmpty
-              ? const Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.shopping_bag_outlined,
-                          size: 80,
-                          color: Colors.grey,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Your cart is empty',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Add items to your cart to get started',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Your Cart',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                )
-              : Expanded(
-                  child: ListView.builder(
-                    itemCount: _cartItems.length,
-                    itemBuilder: (context, index) {
-                      final item = _cartItems[index];
-                      
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // Cart items
+              _cartItems.isEmpty
+                  ? const Expanded(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.shopping_bag_outlined,
+                              size: 80,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Your cart is empty',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Add items to your cart to get started',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey,
+                              ),
                             ),
                           ],
                         ),
-                        child: Row(
-                          children: [
-                            // Image
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                item['imageUrl'] as String,
-                                width: 70,
-                                height: 70,
-                                fit: BoxFit.cover,
-                              ),
+                      ),
+                    )
+                  : Expanded(
+                      child: ListView.builder(
+                        itemCount: _cartItems.length,
+                        itemBuilder: (context, index) {
+                          final item = _cartItems[index];
+                          
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade200),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.03),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            
-                            // Item details
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item['name'] as String,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
+                            child: Row(
+                              children: [
+                                // Image
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    item['imageUrl'] as String,
+                                    width: 70,
+                                    height: 70,
+                                    fit: BoxFit.cover,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '\$${(item['price'] as double).toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade700,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  
-                                  // Quantity selector
-                                  Row(
+                                ),
+                                const SizedBox(width: 12),
+                                
+                                // Item details
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade100,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.remove, size: 16),
-                                              onPressed: () {
-                                                // Decrease quantity
-                                                if (item['quantity'] > 1) {
-                                                  setState(() {
-                                                    item['quantity'] = item['quantity'] - 1;
-                                                  });
-                                                  Navigator.pop(context);
-                                                  _showMiniCart(context);
-                                                } else {
-                                                  // Remove item if quantity becomes 0
-                                                  setState(() {
-                                                    _cartItems.removeAt(index);
-                                                  });
-                                                  if (_cartItems.isEmpty) {
-                                                    Navigator.pop(context);
-                                                  } else {
-                                                    Navigator.pop(context);
-                                                    _showMiniCart(context);
-                                                  }
-                                                }
-                                              },
-                                              padding: EdgeInsets.zero,
-                                              constraints: const BoxConstraints(
-                                                minWidth: 30,
-                                                minHeight: 30,
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              width: 30,
-                                              child: Text(
-                                                '${item['quantity']}',
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.add, size: 16),
-                                              onPressed: () {
-                                                // Increase quantity
-                                                setState(() {
-                                                  item['quantity'] = item['quantity'] + 1;
-                                                });
-                                                Navigator.pop(context);
-                                                _showMiniCart(context);
-                                              },
-                                              padding: EdgeInsets.zero,
-                                              constraints: const BoxConstraints(
-                                                minWidth: 30,
-                                                minHeight: 30,
-                                              ),
-                                            ),
-                                          ],
+                                      Text(
+                                        item['name'] as String,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
                                         ),
                                       ),
-                                      const Spacer(),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                        onPressed: () {
-                                          // Remove item
-                                          setState(() {
-                                            _cartItems.removeAt(index);
-                                          });
-                                          if (_cartItems.isEmpty) {
-                                            Navigator.pop(context);
-                                          } else {
-                                            Navigator.pop(context);
-                                            _showMiniCart(context);
-                                          }
-                                        },
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(
-                                          minWidth: 30,
-                                          minHeight: 30,
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '\$${(item['price'] as double).toStringAsFixed(2)}',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade700,
+                                          fontSize: 14,
                                         ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      
+                                      // Quantity selector
+                                      Row(
+                                        children: [
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade100,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                IconButton(
+                                                  icon: const Icon(Icons.remove, size: 16),
+                                                  onPressed: () {
+                                                    // Decrease quantity
+                                                    if (item['quantity'] > 1) {
+                                                      setModalState(() {
+                                                        item['quantity'] = item['quantity'] - 1;
+                                                      });
+                                                      setState(() {}); // Update parent UI with new totals
+                                                    } else {
+                                                      // Remove item if quantity becomes 0
+                                                      setModalState(() {
+                                                        _cartItems.removeAt(index);
+                                                      });
+                                                      setState(() {}); // Update parent UI with new totals
+                                                      
+                                                      if (_cartItems.isEmpty) {
+                                                        Navigator.pop(context);
+                                                      }
+                                                    }
+                                                  },
+                                                  padding: EdgeInsets.zero,
+                                                  constraints: const BoxConstraints(
+                                                    minWidth: 30,
+                                                    minHeight: 30,
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  width: 30,
+                                                  child: Text(
+                                                    '${item['quantity']}',
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(Icons.add, size: 16),
+                                                  onPressed: () {
+                                                    // Increase quantity
+                                                    setModalState(() {
+                                                      item['quantity'] = item['quantity'] + 1;
+                                                    });
+                                                    setState(() {}); // Update parent UI with new totals
+                                                  },
+                                                  padding: EdgeInsets.zero,
+                                                  constraints: const BoxConstraints(
+                                                    minWidth: 30,
+                                                    minHeight: 30,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                ],
-                              ),
+                                ),
+                                
+                                // Item total
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red,
+                                        size: 20,
+                                      ),
+                                      onPressed: () {
+                                        setModalState(() {
+                                          _cartItems.removeAt(index);
+                                        });
+                                        setState(() {}); // Update parent UI with new totals
+                                        
+                                        if (_cartItems.isEmpty) {
+                                          Navigator.pop(context);
+                                        }
+                                      },
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                        minWidth: 30,
+                                        minHeight: 30,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '\$${((item['price'] as double) * (item['quantity'] as int)).toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      );
+                          );
+                        },
+                      ),
+                    ),
+            
+              // Cart summary
+              if (_cartItems.isNotEmpty) ...[
+                const Divider(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Subtotal',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    Text(
+                      '\$${_cartTotal.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Navigate to checkout
+                      Navigator.pop(context);
+                      context.go('/cart');
                     },
-                  ),
-                ),
-          
-          // Footer with total and checkout button
-          if (_cartItems.isNotEmpty) ...[
-            const Divider(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Total:',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  '\$${_cartTotal.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Checkout (\$${_cartTotal.toStringAsFixed(2)})',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                context.go('/cart');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Proceed to Checkout',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
+            ],
+          ),
+        );
+      }
     );
   }
 
@@ -2262,6 +2330,260 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // Show filter bottom sheet
+  void _showFilterBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(20),
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Filter Restaurants',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Rating filter
+                  const Text(
+                    'Minimum Rating',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      const Text('0'),
+                      Expanded(
+                        child: Slider(
+                          value: _minRating,
+                          min: 0,
+                          max: 5,
+                          divisions: 10,
+                          label: _minRating.toStringAsFixed(1),
+                          activeColor: AppTheme.primaryColor,
+                          onChanged: (value) {
+                            setModalState(() {
+                              _minRating = value;
+                            });
+                          },
+                        ),
+                      ),
+                      const Text('5'),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 18),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${_minRating.toStringAsFixed(1)}+',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Cuisine Type filter
+                  const Text(
+                    'Cuisine Type',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _availableCuisineTypes.map((cuisine) {
+                      final isSelected = _selectedCuisines.contains(cuisine);
+                      return GestureDetector(
+                        onTap: () {
+                          setModalState(() {
+                            if (isSelected) {
+                              _selectedCuisines.remove(cuisine);
+                            } else {
+                              _selectedCuisines.add(cuisine);
+                            }
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppTheme.primaryColor : Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected ? AppTheme.primaryColor : Colors.grey.shade300,
+                            ),
+                          ),
+                          child: Text(
+                            cuisine,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black87,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Delivery Time filter
+                  const Text(
+                    'Maximum Delivery Time',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      const Text('10 min'),
+                      Expanded(
+                        child: Slider(
+                          value: _maxDeliveryTime.toDouble(),
+                          min: 10,
+                          max: 60,
+                          divisions: 10,
+                          label: '$_maxDeliveryTime min',
+                          activeColor: AppTheme.primaryColor,
+                          onChanged: (value) {
+                            setModalState(() {
+                              _maxDeliveryTime = value.toInt();
+                            });
+                          },
+                        ),
+                      ),
+                      const Text('60 min'),
+                    ],
+                  ),
+                  Center(
+                    child: Text(
+                      'Up to $_maxDeliveryTime minutes',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Free Delivery filter
+                  CheckboxListTile(
+                    title: const Text(
+                      'Free Delivery Only',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    value: _freeDeliveryOnly,
+                    activeColor: AppTheme.primaryColor,
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    onChanged: (bool? value) {
+                      setModalState(() {
+                        _freeDeliveryOnly = value ?? false;
+                      });
+                    },
+                  ),
+                  
+                  const Spacer(),
+                  
+                  // Filter action buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setModalState(() {
+                              _resetFilters();
+                            });
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            side: BorderSide(color: AppTheme.primaryColor),
+                          ),
+                          child: const Text('Reset'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              // Apply filters first on search results if searching
+                              List<Restaurant> baseList = _isSearching 
+                                  ? _searchRestaurantsInternal(_searchQuery)
+                                  : restaurants;
+                              _filteredRestaurants = _applyFilters(baseList);
+                            });
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Apply Filters',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 } 
