@@ -213,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
+                            color: Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -239,6 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         style: const TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
                                         ),
                                       ),
                                       const SizedBox(width: 2),
@@ -1131,14 +1132,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Add new address button
           ElevatedButton.icon(
             onPressed: () {
-              // Show add address screen/dialog
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Add New Address feature coming soon!'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              _showAddAddressMap(context);
             },
             icon: const Icon(Icons.add),
             label: const Text('Add New Address'),
@@ -1636,6 +1630,231 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  // Add New Address with map selection
+  void _showAddAddressMap(BuildContext context) {
+    Navigator.pop(context); // Close the location sheet first
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _buildAddAddressMapSheet(context),
+    );
+  }
+
+  // Build the map selection sheet for adding a new address
+  Widget _buildAddAddressMapSheet(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      height: MediaQuery.of(context).size.height * 0.9,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Add New Address',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Search address input
+          TextField(
+            decoration: InputDecoration(
+              hintText: 'Search for a location',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Map container
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Placeholder for map (in a real implementation, this would be a Google Maps widget)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.network(
+                      'https://maps.googleapis.com/maps/api/staticmap?center=Accra,Ghana&zoom=13&size=600x600&maptype=roadmap&key=YOUR_API_KEY',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.map, size: 80, color: Colors.grey),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Map preview unavailable',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'In a real implementation, this would be an interactive Google Map',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  
+                  // Center pin marker
+                  const Center(
+                    child: Icon(
+                      Icons.location_pin,
+                      color: AppTheme.primaryColor,
+                      size: 40,
+                    ),
+                  ),
+                  
+                  // Current location button
+                  Positioned(
+                    right: 16,
+                    bottom: 100,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.my_location, color: Colors.blue),
+                        onPressed: () {
+                          // In a real implementation, this would get the user's current location
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Getting your current location...'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Selected location info
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Selected Location',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, color: AppTheme.primaryColor, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Move the map to pinpoint your exact location',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Address details input
+          TextField(
+            decoration: InputDecoration(
+              hintText: 'Address Label (e.g., Home, Work)',
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Save button
+          ElevatedButton(
+            onPressed: () {
+              // Add the new address to saved locations
+              setState(() {
+                _savedLocations.add('New Location - Selected from Map');
+                _currentLocation = 'New Location - Selected from Map';
+              });
+              
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('New address added successfully!'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('Save This Location'),
+          ),
         ],
       ),
     );
