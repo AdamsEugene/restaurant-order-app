@@ -83,9 +83,9 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.arrow_back),
+                child: const Icon(Icons.arrow_back, color: Colors.black),
               ),
-              onPressed: () => context.pop(),
+              onPressed: () => context.go('/home'),
             ),
             actions: [
               IconButton(
@@ -384,13 +384,28 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                                             color: Colors.grey[600],
                                           ),
                                         ),
-                                        trailing: Text(
-                                          '\$${menuItem.price.toStringAsFixed(2)}',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).primaryColor,
-                                          ),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              '\$${menuItem.price.toStringAsFixed(2)}',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(context).primaryColor,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Icon(
+                                              Icons.arrow_forward_ios,
+                                              size: 14,
+                                              color: Colors.grey[400],
+                                            ),
+                                          ],
                                         ),
+                                        onTap: () {
+                                          // Navigate to menu item detail page
+                                          context.go('/menu/${menuItem.id}');
+                                        },
                                       );
                                     },
                                   ),
