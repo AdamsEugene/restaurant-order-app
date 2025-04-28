@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../models/menu_item.dart';
 import '../../models/restaurant.dart';
 
-class OrderConfirmationScreen extends StatelessWidget {
+class OrderConfirmationScreen extends StatefulWidget {
   final Map<String, dynamic> orderDetails;
 
   const OrderConfirmationScreen({
@@ -12,14 +12,98 @@ class OrderConfirmationScreen extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<OrderConfirmationScreen> createState() => _OrderConfirmationScreenState();
+}
+
+class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
+  late bool isDelivery = true;
+  late TextEditingController addressController;
+  late TextEditingController phoneController;
+  late String deliveryTime = '30-45 minutes';
+  final double deliveryFee = 2.0;
+
+  @override
+  void initState() {
+    super.initState();
+    addressController = TextEditingController(text: '123 Main Street, Apt 4B, Accra, Ghana');
+    phoneController = TextEditingController(text: '+233 54 123 4567');
+  }
+
+  @override
+  void dispose() {
+    addressController.dispose();
+    phoneController.dispose();
+    super.dispose();
+  }
+
+  void _openMap() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Location'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: Icon(Icons.map, size: 100, color: Colors.grey),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.my_location),
+                  onPressed: () {
+                    // This would normally use location services
+                    // For demo, we'll just update with a new address
+                    setState(() {
+                      addressController.text = '456 Park Avenue, East Legon, Accra, Ghana';
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // This would normally save selected coordinates
+              setState(() {
+                addressController.text = '456 Park Avenue, East Legon, Accra, Ghana';
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('Confirm Location'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final MenuItem? menuItem = orderDetails['menuItem'] as MenuItem?;
-    final int quantity = orderDetails['quantity'] as int;
-    final String customizations = orderDetails['customizations'] as String;
-    final String notes = orderDetails['notes'] as String;
-    final Restaurant? restaurant = orderDetails['restaurant'] as Restaurant?;
+    final MenuItem? menuItem = widget.orderDetails['menuItem'] as MenuItem?;
+    final int quantity = widget.orderDetails['quantity'] as int;
+    final String customizations = widget.orderDetails['customizations'] as String;
+    final String notes = widget.orderDetails['notes'] as String;
+    final Restaurant? restaurant = widget.orderDetails['restaurant'] as Restaurant?;
 
     final double totalPrice = menuItem != null ? menuItem.price * quantity : 0.0;
+    final double tax = totalPrice * 0.05;
+    final double totalAmount = totalPrice + (isDelivery ? deliveryFee : 0) + tax;
 
     return Scaffold(
       appBar: AppBar(
@@ -227,12 +311,72 @@ class OrderConfirmationScreen extends StatelessWidget {
                     
                     // Delivery details
                     const SizedBox(height: 24),
-                    const Text(
-                      'Delivery Details',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Delivery Details',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        // Delivery/Pickup Toggle
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    isDelivery = true;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: isDelivery ? Colors.deepOrange : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    'Delivery',
+                                    style: TextStyle(
+                                      color: isDelivery ? Colors.white : Colors.black,
+                                      fontWeight: isDelivery ? FontWeight.bold : FontWeight.normal,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    isDelivery = false;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: !isDelivery ? Colors.deepOrange : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    'Pickup',
+                                    style: TextStyle(
+                                      color: !isDelivery ? Colors.white : Colors.black,
+                                      fontWeight: !isDelivery ? FontWeight.bold : FontWeight.normal,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Card(
@@ -245,50 +389,125 @@ class OrderConfirmationScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Address
-                            Row(
-                              children: [
-                                Icon(Icons.location_on, color: Colors.grey[600]),
-                                const SizedBox(width: 8),
-                                const Expanded(
-                                  child: Text(
-                                    '123 Main Street, Apt 4B, Accra, Ghana',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      height: 1.5,
+                            if (isDelivery) ...[
+                              // Address with edit button
+                              Row(
+                                children: [
+                                  Icon(Icons.location_on, color: Colors.grey[600]),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: addressController,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Enter delivery address',
+                                        border: InputBorder.none,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            // Phone
-                            Row(
-                              children: [
-                                Icon(Icons.phone, color: Colors.grey[600]),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  '+233 54 123 4567',
-                                  style: TextStyle(
-                                    fontSize: 14,
+                                  IconButton(
+                                    icon: const Icon(Icons.map_outlined, color: Colors.deepOrange),
+                                    onPressed: _openMap,
+                                    tooltip: 'Select on map',
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            // Delivery time
-                            Row(
-                              children: [
-                                Icon(Icons.access_time, color: Colors.grey[600]),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Estimated delivery: 30-45 minutes',
-                                  style: TextStyle(
-                                    fontSize: 14,
+                                ],
+                              ),
+                              const Divider(),
+                              // Phone
+                              Row(
+                                children: [
+                                  Icon(Icons.phone, color: Colors.grey[600]),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: phoneController,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Enter phone number',
+                                        border: InputBorder.none,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
+                              const Divider(),
+                              // Delivery time
+                              Row(
+                                children: [
+                                  Icon(Icons.access_time, color: Colors.grey[600]),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Estimated delivery: $deliveryTime',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ] else ...[
+                              // Pickup details
+                              Row(
+                                children: [
+                                  Icon(Icons.storefront, color: Colors.grey[600]),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      restaurant?.name ?? 'Restaurant',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Icon(Icons.location_on, color: Colors.grey[600]),
+                                  const SizedBox(width: 8),
+                                  const Expanded(
+                                    child: Text(
+                                      '42 Independence Avenue, Accra, Ghana',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Icon(Icons.access_time, color: Colors.grey[600]),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Ready for pickup in: $deliveryTime',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Icon(Icons.phone, color: Colors.grey[600]),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: phoneController,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Enter phone number for notifications',
+                                        border: InputBorder.none,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -320,20 +539,22 @@ class OrderConfirmationScreen extends StatelessWidget {
                                 Text('\$${totalPrice.toStringAsFixed(2)}'),
                               ],
                             ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: const [
-                                Text('Delivery Fee'),
-                                Text('\$2.00'),
-                              ],
-                            ),
+                            if (isDelivery) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Delivery Fee'),
+                                  Text('\$${deliveryFee.toStringAsFixed(2)}'),
+                                ],
+                              ),
+                            ],
                             const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text('Tax'),
-                                Text('\$${(totalPrice * 0.05).toStringAsFixed(2)}'),
+                                Text('\$${tax.toStringAsFixed(2)}'),
                               ],
                             ),
                             const Divider(height: 24),
@@ -348,7 +569,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  '\$${(totalPrice + 2.0 + totalPrice * 0.05).toStringAsFixed(2)}',
+                                  '\$${totalAmount.toStringAsFixed(2)}',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -360,8 +581,6 @@ class OrderConfirmationScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    
-                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -370,52 +589,66 @@ class OrderConfirmationScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
               spreadRadius: 1,
-              blurRadius: 10,
-              offset: const Offset(0, -3),
+              blurRadius: 4,
+              offset: const Offset(0, -2),
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  // Calculate total amount to pass to payment screen
-                  final double totalPrice = menuItem != null ? menuItem.price * quantity : 0.0;
-                  final double deliveryFee = 2.0;
-                  final double tax = totalPrice * 0.05;
-                  final double totalAmount = totalPrice + deliveryFee + tax;
-                  
-                  // Navigate to payment methods screen
-                  context.go('/payment-methods', extra: {
-                    'menuItem': menuItem,
-                    'quantity': quantity,
-                    'customizations': customizations,
-                    'notes': notes,
-                    'restaurant': restaurant,
-                    'totalAmount': totalAmount,
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Calculate total amount to pass to payment screen
+                    final double totalPrice = menuItem != null ? menuItem.price * quantity : 0.0;
+                    final double deliveryFee = isDelivery ? this.deliveryFee : 0.0;
+                    final double tax = totalPrice * 0.05;
+                    final double totalAmount = totalPrice + deliveryFee + tax;
+                    
+                    // Create updated delivery details
+                    final Map<String, String> deliveryDetails = {
+                      'method': isDelivery ? 'delivery' : 'pickup',
+                      'address': isDelivery ? addressController.text : '42 Independence Avenue, Accra, Ghana',
+                      'phone': phoneController.text,
+                      'estimatedTime': deliveryTime,
+                    };
+                    
+                    // Navigate to payment methods screen
+                    context.go('/payment-methods', extra: {
+                      'menuItem': menuItem,
+                      'quantity': quantity,
+                      'customizations': customizations,
+                      'notes': notes,
+                      'restaurant': restaurant,
+                      'totalAmount': totalAmount,
+                      'deliveryDetails': deliveryDetails,
+                      'isDelivery': isDelivery,
+                      'deliveryFee': deliveryFee,
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Continue to Payment',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  child: const Text(
+                    'Continue to Payment',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
