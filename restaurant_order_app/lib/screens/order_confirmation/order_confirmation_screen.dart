@@ -384,17 +384,20 @@ class OrderConfirmationScreen extends StatelessWidget {
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
-                  // Navigate to payment screen or directly place order
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Order placed successfully!'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
+                  // Calculate total amount to pass to payment screen
+                  final double totalPrice = menuItem != null ? menuItem.price * quantity : 0.0;
+                  final double deliveryFee = 2.0;
+                  final double tax = totalPrice * 0.05;
+                  final double totalAmount = totalPrice + deliveryFee + tax;
                   
-                  // Navigate to home after placing order
-                  Future.delayed(const Duration(seconds: 2), () {
-                    context.go('/home');
+                  // Navigate to payment methods screen
+                  context.go('/payment-methods', extra: {
+                    'menuItem': menuItem,
+                    'quantity': quantity,
+                    'customizations': customizations,
+                    'notes': notes,
+                    'restaurant': restaurant,
+                    'totalAmount': totalAmount,
                   });
                 },
                 style: ElevatedButton.styleFrom(
@@ -404,7 +407,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
-                  'Place Order',
+                  'Continue to Payment',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

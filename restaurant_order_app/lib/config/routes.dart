@@ -11,6 +11,7 @@ import '../screens/notifications/notifications_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/menu_item_detail/menu_item_detail_screen.dart';
 import '../screens/order_confirmation/order_confirmation_screen.dart';
+import '../screens/payment/payment_methods_screen.dart';
 import '../widgets/layout/main_layout.dart';
 
 class AppRouter {
@@ -66,6 +67,15 @@ class AppRouter {
         builder: (context, state) {
           final orderDetails = state.extra as Map<String, dynamic>;
           return OrderConfirmationScreen(orderDetails: orderDetails);
+        },
+      ),
+      
+      // Payment methods route
+      GoRoute(
+        path: '/payment-methods',
+        builder: (context, state) {
+          final orderDetails = state.extra as Map<String, dynamic>;
+          return PaymentMethodsScreen(orderDetails: orderDetails);
         },
       ),
       
