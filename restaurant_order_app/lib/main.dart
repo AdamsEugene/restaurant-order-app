@@ -7,15 +7,29 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Restaurant Order App',
-      theme: AppTheme.lightTheme(),
-      themeMode: ThemeMode.light,
+      theme: ThemeData(
+        primaryColor: AppTheme.primaryColor,
+        scaffoldBackgroundColor: Colors.grey[50],
+        appBarTheme: AppBarTheme(
+          color: Colors.grey[50],
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.black),
+          titleTextStyle: const TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        fontFamily: 'Poppins',
+      ),
       routerConfig: AppRouter.router,
+      debugShowCheckedModeBanner: false,
     );
   }
 }

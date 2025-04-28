@@ -25,24 +25,33 @@ class _HomeScreenState extends State<HomeScreen> {
   String? errorMessage;
   
   // For promotions
-  final List<Map<String, String>> promotions = [
+  final List<Map<String, dynamic>> promotions = [
     {
       'title': 'Special Offer',
       'subtitle': 'Free delivery on your first order',
+      'description': 'Enjoy free delivery on your first order with us. No minimum spend required.',
       'image': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
       'color': '#FF5252',
+      'expiryDate': '2023-12-31',
+      'code': 'FIRSTDELIVERY',
     },
     {
       'title': 'New Restaurants',
       'subtitle': 'Discover new flavors near you',
+      'description': '10% off your first order from our newly added restaurant partners.',
       'image': 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
       'color': '#448AFF',
+      'expiryDate': '2023-12-15',
+      'code': 'NEWPLACE10',
     },
     {
       'title': '15% Discount',
       'subtitle': 'Use code: WELCOME15',
+      'description': 'Get 15% off your order with a minimum spend of \$20.',
       'image': 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
       'color': '#4CAF50',
+      'expiryDate': '2023-12-10',
+      'code': 'WELCOME15',
     },
   ];
 
@@ -103,6 +112,11 @@ class _HomeScreenState extends State<HomeScreen> {
   int get _cartItemCount => _cartItems.fold(
       0, (total, item) => total + (item['quantity'] as int));
 
+  // Search-related variables
+  String _searchQuery = '';
+  List<Restaurant> _filteredRestaurants = [];
+  bool _isSearching = false;
+
   @override
   void initState() {
     super.initState();
@@ -148,6 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
       
       setState(() {
         restaurants = loadedRestaurants;
+        _filteredRestaurants = loadedRestaurants;
         isLoadingRestaurants = false;
       });
     } catch (e) {
@@ -156,6 +171,33 @@ class _HomeScreenState extends State<HomeScreen> {
         errorMessage = 'Failed to load restaurants: ${e.toString()}';
       });
     }
+  }
+
+  // Search restaurants based on query
+  void _searchRestaurants(String query) {
+    setState(() {
+      _searchQuery = query.trim();
+      _isSearching = _searchQuery.isNotEmpty;
+      
+      if (_searchQuery.isEmpty) {
+        _filteredRestaurants = restaurants;
+      } else {
+        _filteredRestaurants = restaurants.where((restaurant) {
+          return restaurant.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                 restaurant.cuisineType.toLowerCase().contains(_searchQuery.toLowerCase());
+        }).toList();
+      }
+    });
+  }
+
+  // Clear search
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() {
+      _searchQuery = '';
+      _isSearching = false;
+      _filteredRestaurants = restaurants;
+    });
   }
 
   void _toggleCategory(String categoryName) {
@@ -366,253 +408,295 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: SearchField(
                         controller: _searchController,
                         hintText: 'Search for restaurants or dishes',
-                        onSearch: (query) {
-                          // Handle search
-                          print('Searching for: $query');
-                          // Here you would typically update a search results page
-                        },
+                        onSearch: _searchRestaurants,
+                        onClear: _clearSearch,
+                        showClearButton: _isSearching,
                       ),
                     ),
                   ),
                 ),
               ),
               
-              // Promotions Section
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FadeInLeft(
-                        child: Row(
+              // Search results indicator
+              if (_isSearching)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Special Offers',
-                              style: TextStyle(
-                                fontSize: 18,
+                            Text(
+                              'Results for "$_searchQuery"',
+                              style: const TextStyle(
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             TextButton(
-                              onPressed: () {
-                                // View all promotions
-                              },
-                              child: const Text('View All'),
+                              onPressed: _clearSearch,
+                              child: const Text('Clear Search'),
                             ),
                           ],
                         ),
-                      ),
-                      
-                      SizedBox(
-                        height: 160,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: promotions.length,
-                          itemBuilder: (context, index) {
-                            final promo = promotions[index];
-                            Color promoColor = _getColorFromHex(promo['color']!);
-                            
-                            return FadeInUp(
-                              delay: Duration(milliseconds: 100 * index),
-                              child: Container(
-                                margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
-                                width: 280,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      promoColor.withOpacity(0.7),
-                                      promoColor,
-                                    ],
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: promoColor.withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Stack(
-                                  children: [
-                                    Positioned(
-                                      right: -20,
-                                      bottom: -20,
-                                      child: CircleAvatar(
-                                        radius: 60,
-                                        backgroundColor: Colors.white.withOpacity(0.1),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      right: 20,
-                                      bottom: 5,
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Image.network(
-                                          promo['image']!,
-                                          width: 100,
-                                          height: 100,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            promo['title']!,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          SizedBox(
-                                            width: 160,
-                                            child: Text(
-                                              promo['subtitle']!,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              // Handle promotion action
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.white,
-                                              foregroundColor: promoColor,
-                                              elevation: 0,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                              minimumSize: Size.zero,
-                                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                            ),
-                                            child: const Text(
-                                              'Claim Now',
-                                              style: TextStyle(fontSize: 12),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              // Categories Section
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FadeInLeft(
-                        child: const Text(
-                          'Categories',
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_filteredRestaurants.length} ${_filteredRestaurants.length == 1 ? 'restaurant' : 'restaurants'} found',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: 100,
-                        child: isLoadingCategories
-                            ? const Center(child: CircularProgressIndicator())
-                            : ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: categories.length,
-                                itemBuilder: (context, index) {
-                                  final category = categories[index];
-                                  final isSelected = selectedCategories.contains(category.name);
-                                  
-                                  return FadeInRight(
-                                    delay: Duration(milliseconds: 100 * index),
-                                    child: GestureDetector(
-                                      onTap: () => _toggleCategory(category.name),
-                                      child: Container(
-                                        width: 80,
-                                        margin: const EdgeInsets.only(right: 16),
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            AnimatedContainer(
-                                              duration: const Duration(milliseconds: 300),
-                                              height: 60,
-                                              width: 60,
-                                              decoration: BoxDecoration(
-                                                color: isSelected ? AppTheme.primaryColor.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(16),
-                                                border: Border.all(
-                                                  color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-                                                  width: 2,
-                                                ),
-                                                boxShadow: isSelected ? [
-                                                  BoxShadow(
-                                                    color: AppTheme.primaryColor.withOpacity(0.2),
-                                                    blurRadius: 8,
-                                                    offset: const Offset(0, 4),
-                                                  ),
-                                                ] : null,
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius: BorderRadius.circular(14),
-                                                child: Image.network(
-                                                  category.imageUrl,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              category.name,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                                color: isSelected ? AppTheme.primaryColor : Colors.black87,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
+                        const Divider(height: 24),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              
+              // Promotions Section
+              if (!_isSearching)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FadeInLeft(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Special Offers',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  // View all promotions
+                                  context.go('/special-offers');
+                                },
+                                child: const Text('View All'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        SizedBox(
+                          height: 160,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: promotions.length,
+                            itemBuilder: (context, index) {
+                              final promo = promotions[index];
+                              Color promoColor = _getColorFromHex(promo['color']);
+                              
+                              return FadeInUp(
+                                delay: Duration(milliseconds: 100 * index),
+                                child: GestureDetector(
+                                  onTap: () => _showPromoDetails(context, promo),
+                                  child: Container(
+                                    margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+                                    width: 280,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          promoColor.withOpacity(0.7),
+                                          promoColor,
+                                        ],
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: promoColor.withOpacity(0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Stack(
+                                      children: [
+                                        Positioned(
+                                          right: -20,
+                                          bottom: -20,
+                                          child: CircleAvatar(
+                                            radius: 60,
+                                            backgroundColor: Colors.white.withOpacity(0.1),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          right: 20,
+                                          bottom: 5,
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(12),
+                                            child: Image.network(
+                                              promo['image']!,
+                                              width: 100,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                promo['title']!,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              SizedBox(
+                                                width: 160,
+                                                child: Text(
+                                                  promo['subtitle']!,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 16),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  _showPromoDetails(context, promo);
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.white,
+                                                  foregroundColor: promoColor,
+                                                  elevation: 0,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                                  minimumSize: Size.zero,
+                                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                ),
+                                                child: const Text(
+                                                  'View Details',
+                                                  style: TextStyle(fontSize: 12),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              
+              // Categories Section
+              if (!_isSearching)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FadeInLeft(
+                          child: const Text(
+                            'Categories',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 100,
+                          child: isLoadingCategories
+                              ? const Center(child: CircularProgressIndicator())
+                              : ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: categories.length,
+                                  itemBuilder: (context, index) {
+                                    final category = categories[index];
+                                    final isSelected = selectedCategories.contains(category.name);
+                                    
+                                    return FadeInRight(
+                                      delay: Duration(milliseconds: 100 * index),
+                                      child: GestureDetector(
+                                        onTap: () => _toggleCategory(category.name),
+                                        child: Container(
+                                          width: 80,
+                                          margin: const EdgeInsets.only(right: 16),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              AnimatedContainer(
+                                                duration: const Duration(milliseconds: 300),
+                                                height: 60,
+                                                width: 60,
+                                                decoration: BoxDecoration(
+                                                  color: isSelected ? AppTheme.primaryColor.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                                                  borderRadius: BorderRadius.circular(16),
+                                                  border: Border.all(
+                                                    color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+                                                    width: 2,
+                                                  ),
+                                                  boxShadow: isSelected ? [
+                                                    BoxShadow(
+                                                      color: AppTheme.primaryColor.withOpacity(0.2),
+                                                      blurRadius: 8,
+                                                      offset: const Offset(0, 4),
+                                                    ),
+                                                  ] : null,
+                                                ),
+                                                child: ClipRRect(
+                                                  borderRadius: BorderRadius.circular(14),
+                                                  child: Image.network(
+                                                    category.imageUrl,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                category.name,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                                  color: isSelected ? AppTheme.primaryColor : Colors.black87,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               
               // Restaurants Section
               SliverToBoxAdapter(
@@ -622,23 +706,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       FadeInLeft(
-                        child: const Text(
-                          'Popular Restaurants',
-                          style: TextStyle(
+                        child: Text(
+                          _isSearching ? 'Search Results' : 'Popular Restaurants',
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      FadeInRight(
-                        child: TextButton.icon(
-                          onPressed: () {
-                            // Filter options
-                          },
-                          icon: const Icon(Icons.tune, size: 18),
-                          label: const Text('Filter'),
+                      if (!_isSearching)
+                        FadeInRight(
+                          child: TextButton.icon(
+                            onPressed: () {
+                              // Filter options
+                            },
+                            icon: const Icon(Icons.tune, size: 18),
+                            label: const Text('Filter'),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -675,12 +760,55 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   )
-                : restaurants.isEmpty
-                  ? const SliverFillRemaining(
+                : _filteredRestaurants.isEmpty
+                  ? SliverFillRemaining(
                       child: Center(
-                        child: Text(
-                          'No restaurants found',
-                          style: TextStyle(fontSize: 16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off,
+                              size: 80,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _isSearching 
+                                  ? 'No results found for "$_searchQuery"' 
+                                  : 'No restaurants available',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            if (_isSearching)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 40),
+                                child: Text(
+                                  'Try a different search term or browse our categories',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            const SizedBox(height: 24),
+                            if (_isSearching)
+                              ElevatedButton(
+                                onPressed: _clearSearch,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text('Clear Search'),
+                              ),
+                          ],
                         ),
                       ),
                     )
@@ -695,7 +823,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                            final restaurant = restaurants[index];
+                            final restaurant = _filteredRestaurants[index];
                             return FadeInUp(
                               delay: Duration(milliseconds: 100 * index),
                               child: GestureDetector(
@@ -915,7 +1043,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
                           },
-                          childCount: restaurants.length,
+                          childCount: _filteredRestaurants.length,
                         ),
                       ),
                     ),
@@ -1856,6 +1984,253 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const Text('Save This Location'),
           ),
         ],
+      ),
+    );
+  }
+
+  // Show promo details
+  void _showPromoDetails(BuildContext context, Map<String, dynamic> promo) {
+    Color promoColor = _getColorFromHex(promo['color']);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.70,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header image with gradient overlay
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 180,
+                    child: Image.network(
+                      promo['image'],
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: double.infinity,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        promoColor.withOpacity(0.5),
+                        promoColor.withOpacity(0.9),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close, color: Colors.black87),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        promo['title'],
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          shadows: [
+                            Shadow(
+                              offset: Offset(0, 1),
+                              blurRadius: 3.0,
+                              color: Color.fromARGB(150, 0, 0, 0),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        promo['subtitle'],
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          shadows: [
+                            Shadow(
+                              offset: Offset(0, 1),
+                              blurRadius: 2.0,
+                              color: Color.fromARGB(130, 0, 0, 0),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            // Promotion details
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Description
+                    const Text(
+                      'Details',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      promo['description'],
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade700,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Promo code
+                    const Text(
+                      'Promo Code',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.grey.shade300,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            promo['code'],
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const Spacer(),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              // Copy to clipboard
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Copied ${promo['code']} to clipboard'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.copy),
+                            label: const Text('Copy'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Expiry date
+                    Row(
+                      children: [
+                        Icon(Icons.access_time, color: Colors.grey.shade500),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Valid until ${promo['expiryDate']}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Claim button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          // Apply promo to current order
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Promotion ${promo['code']} applied!'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Apply Promotion',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -17,6 +17,7 @@ import '../screens/order/order_tracking_screen.dart';
 import '../screens/order/submit_receipt_code_screen.dart';
 import '../screens/order/order_complete_screen.dart';
 import '../screens/order/track_order_screen.dart';
+import '../screens/promotions/special_offers_screen.dart';
 import '../widgets/layout/main_layout.dart';
 
 class AppRouter {
@@ -47,6 +48,10 @@ class AppRouter {
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/special-offers',
+        builder: (context, state) => const SpecialOffersScreen(),
       ),
       GoRoute(
         path: '/restaurants/:id',
