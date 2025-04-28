@@ -100,10 +100,13 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     final String customizations = widget.orderDetails['customizations'] as String;
     final String notes = widget.orderDetails['notes'] as String;
     final Restaurant? restaurant = widget.orderDetails['restaurant'] as Restaurant?;
-
-    final double totalPrice = menuItem != null ? menuItem.price * quantity : 0.0;
-    final double tax = totalPrice * 0.05;
-    final double totalAmount = totalPrice + (isDelivery ? deliveryFee : 0) + tax;
+    
+    // Use finalPrice from menu item details if available, otherwise calculate from base price
+    final double itemPrice = widget.orderDetails['finalPrice'] as double? ?? 
+                            (menuItem != null ? menuItem.price * quantity : 0.0);
+    
+    final double tax = itemPrice * 0.05;
+    final double totalAmount = itemPrice + (isDelivery ? deliveryFee : 0) + tax;
 
     return Scaffold(
       appBar: AppBar(
@@ -225,12 +228,31 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        'Price: \$${menuItem.price.toStringAsFixed(2)} each',
-                                        style: const TextStyle(
-                                          fontSize: 14,
+                                      if (quantity > 1) ...[
+                                        Text(
+                                          'Price: \$${(itemPrice / quantity).toStringAsFixed(2)} each',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                          ),
                                         ),
-                                      ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Total: \$${itemPrice.toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                        ),
+                                      ] else ...[
+                                        Text(
+                                          'Price: \$${itemPrice.toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),
@@ -536,7 +558,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text('Subtotal'),
-                                Text('\$${totalPrice.toStringAsFixed(2)}'),
+                                Text('\$${itemPrice.toStringAsFixed(2)}'),
                               ],
                             ),
                             if (isDelivery) ...[
@@ -606,7 +628,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     // Calculate total amount to pass to payment screen
-                    final double totalPrice = menuItem != null ? menuItem.price * quantity : 0.0;
+                    final double totalPrice = itemPrice;
                     final double deliveryFee = isDelivery ? this.deliveryFee : 0.0;
                     final double tax = totalPrice * 0.05;
                     final double totalAmount = totalPrice + deliveryFee + tax;

@@ -39,6 +39,32 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
   bool _withGarlic = false;
   bool _spicyLevel = false;
   
+  // Custom prices for add-ons
+  final Map<String, double> _meatPrices = {
+    'Beef': 2.0,
+    'Chicken': 2.5,
+    'Fish (Tilapia)': 3.0,
+    'Goat Meat': 3.5,
+    'No Meat (Vegetarian)': 0.0
+  };
+  
+  final Map<String, double> _soupPrices = {
+    'Light Soup': 0.0,
+    'Palm Nut Soup': 1.0,
+    'Groundnut Soup': 1.0,
+    'Pepper Sauce (Shito)': 0.5,
+    'Okro Stew': 1.5,
+    'Abunuabunu (Green Soup)': 2.0
+  };
+  
+  // Extras pricing
+  final double _okraPrice = 1.0;
+  final double _extraBallPrice = 1.0;
+  final double _spicyLevelPrice = 0.5;
+  final double _eggPrice = 1.0;
+  final double _extraPlantainPrice = 1.5;
+  final double _groundnutsPrice = 0.5;
+  
   // Define available options
   final List<String> _soupOptions = [
     'Light Soup', 
@@ -701,6 +727,130 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
     );
   }
   
+  double _calculateTotalPrice() {
+    if (menuItem == null) return 0.0;
+    
+    // Start with base price
+    double totalPrice = menuItem!.price;
+    
+    final String itemNameLower = menuItem!.name.toLowerCase();
+    
+    // Add customization costs
+    if (itemNameLower.contains('banku')) {
+      // Add cost for additional balls beyond the default 2
+      totalPrice += (_numberOfBalls - 2) * _extraBallPrice;
+      
+      // Add soup price
+      if (_selectedSoup != null) {
+        totalPrice += _soupPrices[_selectedSoup] ?? 0.0;
+      }
+      
+      // Add okra price if selected
+      if (_withOkra) {
+        totalPrice += _okraPrice;
+      }
+      
+      // Add meat price
+      if (_selectedMeat != null) {
+        totalPrice += _meatPrices[_selectedMeat] ?? 0.0;
+      }
+    }
+    else if (itemNameLower.contains('fufu')) {
+      // Add soup price
+      if (_selectedSoup != null) {
+        totalPrice += _soupPrices[_selectedSoup] ?? 0.0;
+      }
+      
+      // Add meat price
+      if (_selectedMeat != null) {
+        totalPrice += _meatPrices[_selectedMeat] ?? 0.0;
+      }
+    }
+    else if (itemNameLower.contains('jollof')) {
+      // Add meat price
+      if (_selectedMeat != null) {
+        totalPrice += _meatPrices[_selectedMeat] ?? 0.0;
+      }
+      
+      // Add spicy price
+      if (_spicyLevel) {
+        totalPrice += _spicyLevelPrice;
+      }
+    }
+    else if (itemNameLower.contains('waakye')) {
+      // Add meat price
+      if (_selectedMeat != null) {
+        totalPrice += _meatPrices[_selectedMeat] ?? 0.0;
+      }
+      
+      // Add egg price if spicy level is used for boiled egg
+      if (_spicyLevel) {
+        totalPrice += _eggPrice;
+      }
+    }
+    else if (itemNameLower.contains('kenkey')) {
+      // Add cost for additional pieces beyond the default 3
+      totalPrice += (_numberOfPieces - 3) * 0.75;
+      
+      // Add meat price
+      if (_selectedMeat != null) {
+        totalPrice += _meatPrices[_selectedMeat] ?? 0.0;
+      }
+    }
+    else if (itemNameLower.contains('tuo zaafi') || itemNameLower.contains('tz') || itemNameLower.contains('omotuo')) {
+      // Add soup price
+      if (_selectedSoup != null) {
+        totalPrice += _soupPrices[_selectedSoup] ?? 0.0;
+      }
+      
+      // Add meat price
+      if (_selectedMeat != null) {
+        totalPrice += _meatPrices[_selectedMeat] ?? 0.0;
+      }
+    }
+    else if (itemNameLower.contains('red red')) {
+      // Add egg price
+      if (_withGinger) {  // using withGinger for fried egg
+        totalPrice += _eggPrice;
+      }
+      
+      // Add extra plantain price
+      if (_withGarlic) {  // using withGarlic for extra plantain
+        totalPrice += _extraPlantainPrice;
+      }
+    }
+    else if (itemNameLower.contains('kelewele')) {
+      // Add spicy price
+      if (_spicyLevel) {
+        totalPrice += _spicyLevelPrice;
+      }
+      
+      // Add groundnuts price
+      if (_withGinger) {  // using withGinger for groundnuts
+        totalPrice += _groundnutsPrice;
+      }
+    }
+    
+    // Multiply by quantity for non-customizable items
+    if (!isCustomizableDish()) {
+      totalPrice *= _quantity;
+    }
+    
+    return totalPrice;
+  }
+  
+  bool isCustomizableDish() {
+    if (menuItem == null) return false;
+    
+    final String itemNameLower = menuItem!.name.toLowerCase();
+    return itemNameLower.contains('banku') || 
+           itemNameLower.contains('fufu') || 
+           itemNameLower.contains('waakye') || 
+           itemNameLower.contains('tuo zaafi') || 
+           itemNameLower.contains('tz') || 
+           itemNameLower.contains('omotuo');
+  }
+  
   void _addToCart() {
     // Format customizations for display
     String customizationSummary = '';
@@ -749,13 +899,17 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
       }
     }
     
+    // Calculate the final price with customizations
+    final double finalPrice = _calculateTotalPrice();
+    
     // Navigate to order confirmation screen
     context.go('/order-confirmation', extra: {
       'menuItem': menuItem,
-      'quantity': _quantity,
+      'quantity': isCustomizableDish() ? 1 : _quantity,
       'customizations': customizationSummary,
       'notes': _notesController.text,
       'restaurant': restaurant,
+      'finalPrice': finalPrice,
     });
   }
   
@@ -951,50 +1105,52 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
                                   ),
                                 ),
                                 
-                                // Quantity selector
-                                const SizedBox(height: 32),
-                                const Text(
-                                  'Quantity',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                                // Quantity selector - only show for non-customizable items
+                                if (!isCustomizableDish()) ...[
+                                  const SizedBox(height: 32),
+                                  const Text(
+                                    'Quantity',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.grey[300]!),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.remove),
-                                            onPressed: _decrementQuantity,
-                                            color: _quantity > 1 ? Colors.black : Colors.grey,
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                                            child: Text(
-                                              '$_quantity',
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.grey[300]!),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.remove),
+                                              onPressed: _decrementQuantity,
+                                              color: _quantity > 1 ? Colors.black : Colors.grey,
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                                              child: Text(
+                                                '$_quantity',
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.add),
-                                            onPressed: _incrementQuantity,
-                                            color: Colors.black,
-                                          ),
-                                        ],
+                                            IconButton(
+                                              icon: const Icon(Icons.add),
+                                              onPressed: _incrementQuantity,
+                                              color: Colors.black,
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
+                                    ],
+                                  ),
+                                ],
                                 
                                 // Banku Customization section
                                 _buildCustomizationSection(),
@@ -1020,6 +1176,90 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
                                   ),
                                 ),
                                 
+                                // Price Summary
+                                const SizedBox(height: 24),
+                                const Text(
+                                  'Price Summary',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey[200]!),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text(
+                                            'Base Price:',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          Text(
+                                            '\$${menuItem!.price.toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (!isCustomizableDish() && _quantity > 1) ...[
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'Quantity:',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            Text(
+                                              'x $_quantity',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                      if (_calculateTotalPrice() > menuItem!.price || 
+                                         (!isCustomizableDish() && _quantity > 1)) ...[
+                                        const Divider(height: 24),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'Total:',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text(
+                                              '\$${_calculateTotalPrice().toStringAsFixed(2)}',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(context).primaryColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ]
+                                    ],
+                                  ),
+                                ),
+                                
                                 const SizedBox(height: 24),
                               ],
                             ),
@@ -1031,7 +1271,7 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
         ? FloatingActionButton.extended(
             onPressed: _addToCart,
             icon: const Icon(Icons.restaurant),
-            label: const Text('Order Now'),
+            label: Text('Order Now (\$${_calculateTotalPrice().toStringAsFixed(2)})'),
             backgroundColor: Theme.of(context).primaryColor,
           )
         : null,
