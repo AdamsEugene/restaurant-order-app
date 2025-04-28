@@ -12,6 +12,8 @@ class Restaurant extends Equatable {
   final String address;
   final String description;
   final List<MenuItem> menu;
+  final double deliveryFee;
+  final int deliveryTime;
   
   const Restaurant({
     required this.id,
@@ -24,6 +26,8 @@ class Restaurant extends Equatable {
     required this.address,
     required this.description,
     this.menu = const [],
+    this.deliveryFee = 2.99,
+    this.deliveryTime = 30,
   });
   
   @override
@@ -38,6 +42,8 @@ class Restaurant extends Equatable {
     address, 
     description, 
     menu,
+    deliveryFee,
+    deliveryTime,
   ];
   
   Restaurant copyWith({
@@ -51,6 +57,8 @@ class Restaurant extends Equatable {
     String? address,
     String? description,
     List<MenuItem>? menu,
+    double? deliveryFee,
+    int? deliveryTime,
   }) {
     return Restaurant(
       id: id ?? this.id,
@@ -63,6 +71,8 @@ class Restaurant extends Equatable {
       address: address ?? this.address,
       description: description ?? this.description,
       menu: menu ?? this.menu,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      deliveryTime: deliveryTime ?? this.deliveryTime,
     );
   }
   
@@ -80,6 +90,8 @@ class Restaurant extends Equatable {
       menu: json.containsKey('menu') && json['menu'] != null
           ? (json['menu'] as List).map((item) => MenuItem.fromJson(item)).toList()
           : [],
+      deliveryFee: json.containsKey('deliveryFee') ? (json['deliveryFee'] as num).toDouble() : 2.99,
+      deliveryTime: json.containsKey('deliveryTime') ? (json['deliveryTime'] as num).toInt() : 30,
     );
   }
   
@@ -95,6 +107,8 @@ class Restaurant extends Equatable {
       'address': address,
       'description': description,
       'menu': menu.map((item) => item.toJson()).toList(),
+      'deliveryFee': deliveryFee,
+      'deliveryTime': deliveryTime,
     };
   }
 
@@ -124,4 +138,7 @@ class Restaurant extends Equatable {
     categories.sort();
     return categories;
   }
+  
+  // Check if delivery is free
+  bool get isFreeDelivery => deliveryFee == 0;
 } 

@@ -17,8 +17,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(text: 'adams');
+  final TextEditingController _passwordController = TextEditingController(text: '12345678');
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _rememberMe = false;
@@ -31,6 +31,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   String? _validateEmail(String? value) {
+    // Bypass validation for hardcoded credentials
+    if (value == 'adams') {
+      return null;
+    }
+    
     if (value == null || value.isEmpty) {
       return 'Email is required';
     }
@@ -44,6 +49,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   String? _validatePassword(String? value) {
+    // Bypass validation for hardcoded credentials
+    if (value == '12345678') {
+      return null;
+    }
+    
     if (value == null || value.isEmpty) {
       return 'Password is required';
     }
@@ -62,10 +72,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() {
-    if (_formKey.currentState?.validate() ?? false) {
-      // For now, navigate directly to home screen
-      context.go('/home');
-    }
+    // Simply navigate to home screen directly
+    context.go('/home');
   }
 
   @override
@@ -226,8 +234,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           
                           // Login button
                           PrimaryButton(
-                            text: 'Login',
-                            onPressed: _login,
+                            text: 'Log in',
+                            onPressed: () => _login(),
+                            isFullWidth: true,
                           ),
                           
                           const SizedBox(height: 16),

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../blocs/restaurant/restaurant_bloc.dart';
 import '../../models/restaurant.dart';
-import '../../repositories/restaurant/restaurant_repository.dart';
+import '../../services/api/restaurant_api_service.dart';
+import 'package:http/http.dart' as http;
 
 class RestaurantDetailsScreen extends StatefulWidget {
   final String restaurantId;
@@ -18,7 +17,7 @@ class RestaurantDetailsScreen extends StatefulWidget {
 }
 
 class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
-  late Restaurant? restaurant;
+  Restaurant? restaurant;
   bool isLoading = true;
   String? errorMessage;
 
@@ -35,16 +34,29 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
     });
 
     try {
-      final restaurantRepository = context.read<RestaurantRepository>();
-      restaurant = await restaurantRepository.fetchRestaurantById(widget.restaurantId);
-      setState(() {
-        isLoading = false;
-      });
+      final apiService = RestaurantApiService(httpClient: http.Client());
+      
+      // For now, we'll find the restaurant from the fetchRestaurants method
+      // In a real app, we would have a dedicated fetchRestaurantById method
+      final restaurants = await apiService.fetchRestaurants();
+      final fetchedRestaurant = restaurants.firstWhere(
+        (r) => r.id == widget.restaurantId,
+        orElse: () => throw Exception('Restaurant not found'),
+      );
+      
+      if (mounted) {
+        setState(() {
+          restaurant = fetchedRestaurant;
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-        errorMessage = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          errorMessage = e.toString();
+        });
+      }
     }
   }
 
@@ -102,14 +114,14 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                 ),
                 onPressed: () {
                   if (restaurant != null) {
-                    context.read<RestaurantBloc>().add(
-                      ToggleFavorite(restaurantId: restaurant!.id),
-                    );
                     setState(() {
                       restaurant = restaurant!.copyWith(
                         isFavorite: !restaurant!.isFavorite,
                       );
                     });
+                    
+                    // In a real app, we would persist this change to backend
+                    // apiService.toggleFavorite(restaurant!.id);
                   }
                 },
               ),
@@ -216,13 +228,53 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 
-                                // Cuisine type
-                                Text(
-                                  restaurant!.cuisineType,
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 16,
-                                  ),
+                                // Info row (cuisine, delivery time, distance)
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        restaurant!.cuisineType,
+                                        style: TextStyle(
+                                          color: Theme.of(context).primaryColor,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      Icons.access_time,
+                                      size: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${restaurant!.deliveryTime} min',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      Icons.location_on,
+                                      size: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${restaurant!.distance.toStringAsFixed(1)} km',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 8),
                                 
