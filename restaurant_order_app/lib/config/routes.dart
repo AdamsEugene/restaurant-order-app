@@ -184,7 +184,11 @@ class AppRouter {
           // Cart Tab
           GoRoute(
             path: '/cart',
-            builder: (context, state) => const CartScreen(),
+            builder: (context, state) {
+              // Get any extra data passed to the route (like promotion info)
+              final extra = state.extra as Map<String, dynamic>?;
+              return CartScreen(extraData: extra);
+            },
           ),
           // Profile Tab
           GoRoute(

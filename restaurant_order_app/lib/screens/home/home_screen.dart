@@ -1063,6 +1063,30 @@ class _HomeScreenState extends State<HomeScreen> {
     return Color(int.parse(hexColor, radix: 16));
   }
 
+  // Calculate discount value based on promo type
+  double _getDiscountValue(Map<String, dynamic> promo) {
+    // This is a simplified implementation
+    // In a real app, you would have more complex logic based on promo type
+    
+    final title = promo['title'].toString().toLowerCase();
+    
+    if (title.contains('free delivery')) {
+      return 5.0; // Assuming $5 delivery fee
+    } else if (title.contains('10%')) {
+      return 0.1; // 10% discount
+    } else if (title.contains('15%')) {
+      return 0.15; // 15% discount
+    } else if (title.contains('20%')) {
+      return 0.2; // 20% discount
+    } else if (title.contains('25%')) {
+      return 0.25; // 25% discount
+    } else if (title.contains('buy 1 get 1')) {
+      return 0.5; // 50% off (effectively buy one get one free)
+    } else {
+      return 0.1; // Default 10% discount
+    }
+  }
+
   // Build the location selection sheet
   Widget _buildLocationSheet(BuildContext context) {
     return Container(
@@ -2205,7 +2229,17 @@ class _HomeScreenState extends State<HomeScreen> {
                             SnackBar(
                               content: Text('Promotion ${promo['code']} applied!'),
                               behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 1),
                             ),
+                          );
+                          // Navigate to cart with promotion data
+                          context.go(
+                            '/cart',
+                            extra: {
+                              'promoCode': promo['code'],
+                              'promoDiscount': _getDiscountValue(promo),
+                              'promoTitle': promo['title'],
+                            },
                           );
                         },
                         style: ElevatedButton.styleFrom(

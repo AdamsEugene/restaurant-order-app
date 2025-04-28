@@ -298,13 +298,8 @@ class _SpecialOffersScreenState extends State<SpecialOffersScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context);
-                          // Apply promo to current order
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Promotion ${promo['code']} applied!'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                          // Apply promo to current order and navigate to cart
+                          _applyPromoAndGoToCart(context, promo);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryColor,
@@ -333,6 +328,56 @@ class _SpecialOffersScreenState extends State<SpecialOffersScreen> {
     );
   }
 
+  // Apply promotion and navigate to cart
+  void _applyPromoAndGoToCart(BuildContext context, Map<String, dynamic> promo) {
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Promotion ${promo['code']} applied!'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+    
+    // In a real app, you would:
+    // 1. Save the promo code to app state (e.g., using Provider, Bloc, etc.)
+    // 2. Calculate discount based on promo rules
+    
+    // Navigate to the cart with the promo code info immediately
+    context.go(
+      '/cart',
+      extra: {
+        'promoCode': promo['code'],
+        'promoDiscount': _getDiscountValue(promo),
+        'promoTitle': promo['title'],
+      },
+    );
+  }
+  
+  // Calculate discount value based on promo type
+  double _getDiscountValue(Map<String, dynamic> promo) {
+    // This is a simplified implementation
+    // In a real app, you would have more complex logic based on promo type
+    
+    final title = promo['title'].toString().toLowerCase();
+    
+    if (title.contains('free delivery')) {
+      return 5.0; // Assuming $5 delivery fee
+    } else if (title.contains('10%')) {
+      return 0.1; // 10% discount
+    } else if (title.contains('15%')) {
+      return 0.15; // 15% discount
+    } else if (title.contains('20%')) {
+      return 0.2; // 20% discount
+    } else if (title.contains('25%')) {
+      return 0.25; // 25% discount
+    } else if (title.contains('buy 1 get 1')) {
+      return 0.5; // 50% off (effectively buy one get one free)
+    } else {
+      return 0.1; // Default 10% discount
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -341,7 +386,7 @@ class _SpecialOffersScreenState extends State<SpecialOffersScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: GestureDetector(
-          onTap: () => context.go('/'),
+          onTap: () => context.go('/home'),
           child: Container(
             margin: const EdgeInsets.only(left: 16),
             decoration: BoxDecoration(
