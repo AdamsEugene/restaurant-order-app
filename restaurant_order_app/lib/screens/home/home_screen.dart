@@ -46,6 +46,63 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   ];
 
+  String _currentLocation = 'Current Location';
+  final List<String> _savedLocations = [
+    'Home - 123 Main St, Accra',
+    'Work - 45 Independence Ave, Accra',
+    'University - 78 Campus Road, Accra',
+  ];
+
+  // Notification data
+  final List<Map<String, dynamic>> _notifications = [
+    {
+      'title': 'Your order is on the way!',
+      'message': 'Your order #1234 has been picked up by our delivery partner.',
+      'time': 'Just now',
+      'read': false,
+      'type': 'delivery',
+    },
+    {
+      'title': 'Get 50% off on your next order!',
+      'message': 'Use code WELCOME50 for 50% off on your next order.',
+      'time': '2 hours ago',
+      'read': false,
+      'type': 'promotion',
+    },
+    {
+      'title': 'New Restaurant Added',
+      'message': 'Check out our new restaurant partner "The Seafood Shack"!',
+      'time': 'Yesterday',
+      'read': true,
+      'type': 'info',
+    },
+  ];
+
+  int get _unreadNotificationsCount => 
+      _notifications.where((n) => n['read'] == false).length;
+
+  // Sample cart items
+  final List<Map<String, dynamic>> _cartItems = [
+    {
+      'name': 'Jollof Rice with Chicken',
+      'quantity': 1,
+      'price': 12.99,
+      'imageUrl': 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
+    },
+    {
+      'name': 'Waakye with Fish',
+      'quantity': 2,
+      'price': 14.50,
+      'imageUrl': 'https://images.unsplash.com/photo-1512058564366-18510be2db19?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60',
+    },
+  ];
+
+  double get _cartTotal => _cartItems.fold(
+      0, (total, item) => total + (item['price'] as double) * (item['quantity'] as int));
+
+  int get _cartItemCount => _cartItems.fold(
+      0, (total, item) => total + (item['quantity'] as int));
+
   @override
   void initState() {
     super.initState();
@@ -141,75 +198,158 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     FadeInLeft(
                       duration: const Duration(milliseconds: 500),
-                      child: const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Delivery to',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
+                      child: GestureDetector(
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.white,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                             ),
+                            builder: (context) => _buildLocationSheet(context),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          Row(
+                          child: Row(
                             children: [
-                              Text(
-                                'Current Location',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              const Icon(Icons.location_on, color: AppTheme.primaryColor, size: 18),
+                              const SizedBox(width: 4),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Delivery to',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        _currentLocation.length > 20 
+                                            ? '${_currentLocation.substring(0, 18)}...' 
+                                            : _currentLocation,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      const Icon(Icons.keyboard_arrow_down, size: 16),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              Icon(Icons.keyboard_arrow_down, size: 20),
                             ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                     const Spacer(),
                     FadeInRight(
                       duration: const Duration(milliseconds: 500),
-                      child: Stack(
-                        alignment: Alignment.topRight,
+                      child: Row(
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.1),
-                                  spreadRadius: 1,
-                                  blurRadius: 3,
+                          // Cart button
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  _showMiniCart(context);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(Icons.shopping_bag_outlined, color: Colors.black87, size: 20),
                                 ),
-                              ],
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.notifications_outlined),
-                              onPressed: () {
-                                context.go('/notifications');
-                              },
-                              color: Colors.black87,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: AppTheme.primaryColor,
-                              shape: BoxShape.circle,
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 14,
-                              minHeight: 14,
-                            ),
-                            child: const Text(
-                              '2',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
                               ),
-                              textAlign: TextAlign.center,
-                            ),
+                              if (_cartItems.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: AppTheme.primaryColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 14,
+                                    minHeight: 14,
+                                  ),
+                                  child: Text(
+                                    _cartItemCount.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(width: 12),
+                          // Notification button
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  _showNotificationsPanel(context);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(Icons.notifications_outlined, color: Colors.black87, size: 20),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: AppTheme.primaryColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 14,
+                                  minHeight: 14,
+                                ),
+                                child: Text(
+                                  _unreadNotificationsCount.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -227,6 +367,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         hintText: 'Search for restaurants or dishes',
                         onSearch: (query) {
                           // Handle search
+                          print('Searching for: $query');
+                          // Here you would typically update a search results page
                         },
                       ),
                     ),
@@ -790,5 +932,712 @@ class _HomeScreenState extends State<HomeScreen> {
       hexColor = 'FF$hexColor';
     }
     return Color(int.parse(hexColor, radix: 16));
+  }
+
+  // Build the location selection sheet
+  Widget _buildLocationSheet(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      height: MediaQuery.of(context).size.height * 0.7,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Delivery Location',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          
+          // Search address bar
+          TextField(
+            decoration: InputDecoration(
+              hintText: 'Search address',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          // Current location option
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _currentLocation = 'Current Location';
+              });
+              Navigator.pop(context);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: _currentLocation == 'Current Location' 
+                    ? AppTheme.primaryColor.withOpacity(0.1) 
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _currentLocation == 'Current Location' 
+                      ? AppTheme.primaryColor 
+                      : Colors.grey.shade300,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.my_location, color: AppTheme.primaryColor, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Current Location',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Using GPS',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_currentLocation == 'Current Location')
+                    const Icon(Icons.check_circle, color: AppTheme.primaryColor),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          // Saved locations header
+          const Text(
+            'Saved Locations',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Saved locations list
+          Expanded(
+            child: ListView.builder(
+              itemCount: _savedLocations.length,
+              itemBuilder: (context, index) {
+                final location = _savedLocations[index];
+                final isHome = location.startsWith('Home');
+                final isWork = location.startsWith('Work');
+                final isUniversity = location.startsWith('University');
+                
+                IconData locationIcon;
+                if (isHome) {
+                  locationIcon = Icons.home;
+                } else if (isWork) {
+                  locationIcon = Icons.work;
+                } else if (isUniversity) {
+                  locationIcon = Icons.school;
+                } else {
+                  locationIcon = Icons.location_on;
+                }
+                
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _currentLocation = location;
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: _currentLocation == location 
+                          ? AppTheme.primaryColor.withOpacity(0.1) 
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _currentLocation == location 
+                            ? AppTheme.primaryColor 
+                            : Colors.grey.shade300,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isHome ? Colors.green.shade100 
+                                : isWork ? Colors.blue.shade100 
+                                : isUniversity ? Colors.purple.shade100 
+                                : Colors.orange.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            locationIcon,
+                            color: isHome ? Colors.green 
+                                : isWork ? Colors.blue 
+                                : isUniversity ? Colors.purple 
+                                : Colors.orange,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            location,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (_currentLocation == location)
+                          const Icon(Icons.check_circle, color: AppTheme.primaryColor),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          // Add new address button
+          ElevatedButton.icon(
+            onPressed: () {
+              // Show add address screen/dialog
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Add New Address feature coming soon!'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Add New Address'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Show the notifications panel
+  void _showNotificationsPanel(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _buildNotificationsPanel(context),
+    );
+  }
+
+  // Build the notifications panel
+  Widget _buildNotificationsPanel(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      height: MediaQuery.of(context).size.height * 0.7,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Notifications',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Row(
+                children: [
+                  if (_unreadNotificationsCount > 0)
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          for (var notification in _notifications) {
+                            notification['read'] = true;
+                          }
+                        });
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Mark all as read'),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Notifications list
+          _notifications.isEmpty
+              ? const Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.notifications_off_outlined,
+                          size: 80,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'No notifications yet',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'You will be notified when there are new updates',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Expanded(
+                  child: ListView.builder(
+                    itemCount: _notifications.length,
+                    itemBuilder: (context, index) {
+                      final notification = _notifications[index];
+                      final bool isRead = notification['read'] as bool;
+                      final String type = notification['type'] as String;
+                      
+                      IconData notificationIcon;
+                      Color iconColor;
+                      
+                      switch (type) {
+                        case 'delivery':
+                          notificationIcon = Icons.delivery_dining;
+                          iconColor = Colors.blue;
+                          break;
+                        case 'promotion':
+                          notificationIcon = Icons.local_offer;
+                          iconColor = Colors.deepOrange;
+                          break;
+                        case 'info':
+                          notificationIcon = Icons.info_outline;
+                          iconColor = Colors.green;
+                          break;
+                        default:
+                          notificationIcon = Icons.notifications;
+                          iconColor = Colors.grey;
+                      }
+                      
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isRead ? Colors.white : Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isRead ? Colors.grey.shade200 : Colors.blue.shade200,
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: iconColor.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                notificationIcon,
+                                color: iconColor,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    notification['title'] as String,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    notification['message'] as String,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        notification['time'] as String,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                      if (!isRead)
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              notification['read'] = true;
+                                            });
+                                          },
+                                          child: const Text(
+                                            'Mark as read',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.blue,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
+  // Show the mini cart
+  void _showMiniCart(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _buildMiniCartSheet(context),
+    );
+  }
+
+  // Build the mini cart sheet
+  Widget _buildMiniCartSheet(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      height: MediaQuery.of(context).size.height * 0.6,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Your Cart',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Cart items
+          _cartItems.isEmpty
+              ? const Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.shopping_bag_outlined,
+                          size: 80,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Your cart is empty',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Add items to your cart to get started',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Expanded(
+                  child: ListView.builder(
+                    itemCount: _cartItems.length,
+                    itemBuilder: (context, index) {
+                      final item = _cartItems[index];
+                      
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            // Image
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                item['imageUrl'] as String,
+                                width: 70,
+                                height: 70,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            
+                            // Item details
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item['name'] as String,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '\$${(item['price'] as double).toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade700,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  
+                                  // Quantity selector
+                                  Row(
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.remove, size: 16),
+                                              onPressed: () {
+                                                // Decrease quantity
+                                                if (item['quantity'] > 1) {
+                                                  setState(() {
+                                                    item['quantity'] = item['quantity'] - 1;
+                                                  });
+                                                  Navigator.pop(context);
+                                                  _showMiniCart(context);
+                                                } else {
+                                                  // Remove item if quantity becomes 0
+                                                  setState(() {
+                                                    _cartItems.removeAt(index);
+                                                  });
+                                                  if (_cartItems.isEmpty) {
+                                                    Navigator.pop(context);
+                                                  } else {
+                                                    Navigator.pop(context);
+                                                    _showMiniCart(context);
+                                                  }
+                                                }
+                                              },
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints(
+                                                minWidth: 30,
+                                                minHeight: 30,
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 30,
+                                              child: Text(
+                                                '${item['quantity']}',
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.add, size: 16),
+                                              onPressed: () {
+                                                // Increase quantity
+                                                setState(() {
+                                                  item['quantity'] = item['quantity'] + 1;
+                                                });
+                                                Navigator.pop(context);
+                                                _showMiniCart(context);
+                                              },
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints(
+                                                minWidth: 30,
+                                                minHeight: 30,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                        onPressed: () {
+                                          // Remove item
+                                          setState(() {
+                                            _cartItems.removeAt(index);
+                                          });
+                                          if (_cartItems.isEmpty) {
+                                            Navigator.pop(context);
+                                          } else {
+                                            Navigator.pop(context);
+                                            _showMiniCart(context);
+                                          }
+                                        },
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(
+                                          minWidth: 30,
+                                          minHeight: 30,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+          
+          // Footer with total and checkout button
+          if (_cartItems.isNotEmpty) ...[
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Total:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '\$${_cartTotal.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                context.go('/cart');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Proceed to Checkout',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 } 
