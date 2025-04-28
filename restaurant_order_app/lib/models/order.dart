@@ -30,6 +30,7 @@ class Order extends Equatable {
   final DeliveryAddress? deliveryAddress;
   final String? deliveryInstructions;
   final PaymentMethod paymentMethod;
+  final String? receiptCode;
   
   const Order({
     required this.id,
@@ -50,6 +51,7 @@ class Order extends Equatable {
     this.deliveryAddress,
     this.deliveryInstructions,
     required this.paymentMethod,
+    this.receiptCode,
   });
 
   @override
@@ -72,6 +74,7 @@ class Order extends Equatable {
     deliveryAddress,
     deliveryInstructions,
     paymentMethod,
+    receiptCode,
   ];
   
   // Create a copy of the order with updated fields
@@ -94,6 +97,7 @@ class Order extends Equatable {
     DeliveryAddress? deliveryAddress,
     String? deliveryInstructions,
     PaymentMethod? paymentMethod,
+    String? receiptCode,
   }) {
     return Order(
       id: id ?? this.id,
@@ -114,6 +118,7 @@ class Order extends Equatable {
       deliveryAddress: deliveryAddress ?? this.deliveryAddress,
       deliveryInstructions: deliveryInstructions ?? this.deliveryInstructions,
       paymentMethod: paymentMethod ?? this.paymentMethod,
+      receiptCode: receiptCode ?? this.receiptCode,
     );
   }
   

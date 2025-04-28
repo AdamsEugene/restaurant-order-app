@@ -12,6 +12,11 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/menu_item_detail/menu_item_detail_screen.dart';
 import '../screens/order_confirmation/order_confirmation_screen.dart';
 import '../screens/payment/payment_methods_screen.dart';
+import '../screens/receipt/receipt_screen.dart';
+import '../screens/order/order_tracking_screen.dart';
+import '../screens/order/submit_receipt_code_screen.dart';
+import '../screens/order/order_complete_screen.dart';
+import '../screens/order/track_order_screen.dart';
 import '../widgets/layout/main_layout.dart';
 
 class AppRouter {
@@ -76,6 +81,60 @@ class AppRouter {
         builder: (context, state) {
           final orderDetails = state.extra as Map<String, dynamic>;
           return PaymentMethodsScreen(orderDetails: orderDetails);
+        },
+      ),
+      
+      // Receipt route
+      GoRoute(
+        path: '/receipt/:orderId',
+        builder: (context, state) {
+          final orderId = state.pathParameters['orderId']!;
+          final orderDetails = state.extra as Map<String, dynamic>;
+          final receiptCode = orderDetails['receiptCode'] as String? ?? 'RECEIPT123';
+          return ReceiptScreen(
+            orderDetails: orderDetails,
+            orderId: orderId,
+            receiptCode: receiptCode,
+          );
+        },
+      ),
+      
+      // Order tracking route
+      GoRoute(
+        path: '/order-tracking/:orderId',
+        builder: (context, state) {
+          final orderId = state.pathParameters['orderId']!;
+          final orderDetails = state.extra as Map<String, dynamic>? ?? {};
+          return TrackOrderScreen(
+            orderId: orderId,
+            orderDetails: orderDetails,
+          );
+        },
+      ),
+      
+      // Submit receipt code route
+      GoRoute(
+        path: '/submit-receipt-code/:orderId',
+        builder: (context, state) {
+          final orderId = state.pathParameters['orderId']!;
+          final orderDetails = state.extra as Map<String, dynamic>;
+          return SubmitReceiptCodeScreen(
+            orderId: orderId,
+            orderDetails: orderDetails,
+          );
+        },
+      ),
+      
+      // Order complete route
+      GoRoute(
+        path: '/order-complete/:orderId',
+        builder: (context, state) {
+          final orderId = state.pathParameters['orderId']!;
+          final orderDetails = state.extra as Map<String, dynamic>;
+          return OrderCompleteScreen(
+            orderId: orderId,
+            orderDetails: orderDetails,
+          );
         },
       ),
       

@@ -481,27 +481,33 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       // Close loading dialog
       Navigator.of(context).pop();
       
-      // Show success dialog
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("Payment Successful"),
-            content: const Text("Your order has been placed successfully!"),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  // Close dialog and navigate to order tracking
-                  Navigator.of(context).pop();
-                  context.go('/home');
-                },
-                child: const Text("OK"),
-              ),
-            ],
-          );
-        },
-      );
+      // Generate random order ID and receipt code
+      final orderId = _generateOrderId();
+      final receiptCode = _generateReceiptCode();
+      
+      // Add receipt code to order details
+      final orderDetailsWithReceipt = Map<String, dynamic>.from(widget.orderDetails);
+      orderDetailsWithReceipt['receiptCode'] = receiptCode;
+      
+      // Navigate to receipt screen
+      context.go('/receipt/$orderId', extra: orderDetailsWithReceipt);
     });
+  }
+  
+  String _generateOrderId() {
+    // Generate a random order ID
+    final random = math.Random();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return '${random.nextInt(999) + 1000}-${timestamp % 10000}';
+  }
+  
+  String _generateReceiptCode() {
+    // Generate a random receipt code (6 characters, all uppercase)
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar looking characters
+    final random = math.Random();
+    return String.fromCharCodes(
+      Iterable.generate(6, (_) => chars.codeUnitAt(random.nextInt(chars.length))),
+    );
   }
 
   void _showQRCodeDialog() {
