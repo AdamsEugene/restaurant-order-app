@@ -18,6 +18,7 @@ import '../screens/order/submit_receipt_code_screen.dart';
 import '../screens/order/order_complete_screen.dart';
 import '../screens/order/track_order_screen.dart';
 import '../screens/promotions/special_offers_screen.dart';
+import '../screens/categories/category_screen.dart';
 import '../widgets/layout/main_layout.dart';
 
 class AppRouter {
@@ -52,6 +53,15 @@ class AppRouter {
       GoRoute(
         path: '/special-offers',
         builder: (context, state) => const SpecialOffersScreen(),
+      ),
+      GoRoute(
+        path: '/categories/:id',
+        builder: (context, state) {
+          final categoryId = state.pathParameters['id']!;
+          final extraData = state.extra as Map<String, dynamic>?;
+          final categoryName = extraData?['name'] as String? ?? 'Category';
+          return CategoryScreen(categoryId: categoryId, categoryName: categoryName);
+        },
       ),
       GoRoute(
         path: '/restaurants/:id',

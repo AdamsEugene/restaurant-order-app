@@ -201,15 +201,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _toggleCategory(String categoryName) {
-    setState(() {
-      if (selectedCategories.contains(categoryName)) {
-        selectedCategories.remove(categoryName);
-      } else {
-        selectedCategories.add(categoryName);
-      }
-      
-      // Here we would filter restaurants, but for simplicity we're not implementing this yet
-    });
+    // Navigate to the category screen instead of just toggling selection
+    final selectedCategory = categories.firstWhere(
+      (category) => category.name == categoryName,
+      orElse: () => const Category(id: '0', name: 'Unknown', imageUrl: ''),
+    );
+    
+    // If we have a valid category, navigate to its screen
+    if (selectedCategory.id != '0') {
+      context.go('/categories/${selectedCategory.id}', extra: {'name': categoryName});
+    }
   }
 
   @override
@@ -647,24 +648,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                           child: Column(
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
-                                              AnimatedContainer(
-                                                duration: const Duration(milliseconds: 300),
+                                              Container(
                                                 height: 60,
                                                 width: 60,
                                                 decoration: BoxDecoration(
-                                                  color: isSelected ? AppTheme.primaryColor.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                                                  color: Colors.white,
                                                   borderRadius: BorderRadius.circular(16),
-                                                  border: Border.all(
-                                                    color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-                                                    width: 2,
-                                                  ),
-                                                  boxShadow: isSelected ? [
+                                                  boxShadow: [
                                                     BoxShadow(
-                                                      color: AppTheme.primaryColor.withOpacity(0.2),
+                                                      color: Colors.black.withOpacity(0.05),
                                                       blurRadius: 8,
-                                                      offset: const Offset(0, 4),
+                                                      offset: const Offset(0, 2),
                                                     ),
-                                                  ] : null,
+                                                  ],
                                                 ),
                                                 child: ClipRRect(
                                                   borderRadius: BorderRadius.circular(14),
@@ -677,10 +673,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                               const SizedBox(height: 8),
                                               Text(
                                                 category.name,
-                                                style: TextStyle(
+                                                style: const TextStyle(
                                                   fontSize: 12,
-                                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                                  color: isSelected ? AppTheme.primaryColor : Colors.black87,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.black87,
                                                 ),
                                                 overflow: TextOverflow.ellipsis,
                                                 textAlign: TextAlign.center,
