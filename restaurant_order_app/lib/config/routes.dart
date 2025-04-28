@@ -10,6 +10,7 @@ import '../screens/cart/cart_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/menu_item_detail/menu_item_detail_screen.dart';
+import '../screens/order_confirmation/order_confirmation_screen.dart';
 import '../widgets/layout/main_layout.dart';
 
 class AppRouter {
@@ -56,6 +57,15 @@ class AppRouter {
           final menuItemId = state.pathParameters['id']!;
           // We'll create a simple menu item detail screen
           return MenuItemDetailScreen(itemId: menuItemId);
+        },
+      ),
+      
+      // Order confirmation route
+      GoRoute(
+        path: '/order-confirmation',
+        builder: (context, state) {
+          final orderDetails = state.extra as Map<String, dynamic>;
+          return OrderConfirmationScreen(orderDetails: orderDetails);
         },
       ),
       

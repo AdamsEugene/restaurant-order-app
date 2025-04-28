@@ -702,7 +702,7 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
   }
   
   void _addToCart() {
-    // Format customizations for display in the snackbar
+    // Format customizations for display
     String customizationSummary = '';
     
     if (menuItem != null) {
@@ -749,26 +749,14 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
       }
     }
     
-    // In a real app, this would add the item to the cart with customizations
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${menuItem?.name} added to cart$customizationSummary'),
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'VIEW CART',
-          onPressed: () {
-            context.go('/cart');
-          },
-        ),
-      ),
-    );
-    
-    // Navigate back
-    if (restaurant != null) {
-      context.go('/restaurants/${restaurant!.id}');
-    } else {
-      context.go('/home');
-    }
+    // Navigate to order confirmation screen
+    context.go('/order-confirmation', extra: {
+      'menuItem': menuItem,
+      'quantity': _quantity,
+      'customizations': customizationSummary,
+      'notes': _notesController.text,
+      'restaurant': restaurant,
+    });
   }
   
   Widget _buildBadge({
@@ -1011,7 +999,7 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
                                 // Banku Customization section
                                 _buildCustomizationSection(),
                                 
-                                // Notes
+                                // Special Instructions
                                 const SizedBox(height: 24),
                                 const Text(
                                   'Special Instructions',
@@ -1032,28 +1020,6 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
                                   ),
                                 ),
                                 
-                                // Add to cart button
-                                const SizedBox(height: 32),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: _addToCart,
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Add to Cart - \$${(menuItem!.price * _quantity).toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                
                                 const SizedBox(height: 24),
                               ],
                             ),
@@ -1061,6 +1027,14 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
                         ),
                       ],
                     ),
+      floatingActionButton: menuItem != null
+        ? FloatingActionButton.extended(
+            onPressed: _addToCart,
+            icon: const Icon(Icons.restaurant),
+            label: const Text('Order Now'),
+            backgroundColor: Theme.of(context).primaryColor,
+          )
+        : null,
     );
   }
 } 

@@ -415,20 +415,6 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
           ),
         ],
       ),
-      floatingActionButton: !isLoading && restaurant != null
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                // Navigate to cart or add to cart functionality
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Added to cart'),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.shopping_cart),
-              label: const Text('Add to Cart'),
-            )
-          : null,
     );
   }
 } 
