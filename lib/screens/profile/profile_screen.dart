@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../widgets/buttons/primary_button.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -67,7 +68,8 @@ class ProfileScreen extends StatelessWidget {
               icon: Icons.person_outline,
               title: 'Edit Profile',
               onTap: () {
-                // Navigate to edit profile
+                print("Edit Profile tapped"); // Debug print
+                context.push('/profile/edit');
               },
             ),
             _buildSettingsItem(
