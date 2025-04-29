@@ -4,6 +4,7 @@ import '../../config/theme.dart';
 import '../../models/menu_item.dart';
 import '../../models/restaurant.dart';
 import '../../services/api/restaurant_api_service.dart';
+import '../../services/api/menu_api_service.dart';
 import 'package:http/http.dart' as http;
 
 class MenuItemDetailScreen extends StatefulWidget {
@@ -129,10 +130,48 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
     });
 
     try {
-      final apiService = RestaurantApiService(httpClient: http.Client());
+      final restaurantApiService = RestaurantApiService(httpClient: http.Client());
+      final menuApiService = MenuApiService(httpClient: http.Client());
       
-      // Load all restaurants to find the menu item
-      final restaurants = await apiService.fetchRestaurants();
+      // First try to get the menu item directly from MenuApiService
+      try {
+        final item = await menuApiService.getMenuItemDetails(widget.itemId);
+        if (mounted) {
+          setState(() {
+            menuItem = item;
+            // Find the corresponding restaurant
+            restaurantApiService.fetchRestaurants().then((restaurants) {
+              final r = restaurants.firstWhere(
+                (r) => r.id == item.restaurantId,
+                orElse: () => Restaurant(
+                  id: '',
+                  name: 'Unknown Restaurant',
+                  imageUrl: '',
+                  rating: 0.0,
+                  cuisineType: '',
+                  distance: 0.0,
+                  isFavorite: false,
+                  address: '',
+                  description: '',
+                ),
+              );
+              if (mounted) {
+                setState(() {
+                  restaurant = r;
+                });
+              }
+            });
+            isLoading = false;
+          });
+        }
+        return;
+      } catch (e) {
+        // If we couldn't find it in MenuApiService, continue with the fallback approach
+        print('Could not find menu item in MenuApiService: $e');
+      }
+      
+      // Fallback: Load all restaurants to find the menu item
+      final restaurants = await restaurantApiService.fetchRestaurants();
       
       // Find the menu item in any restaurant
       for (var r in restaurants) {

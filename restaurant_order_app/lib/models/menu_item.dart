@@ -6,41 +6,29 @@ class MenuItem extends Equatable {
   final String description;
   final double price;
   final String imageUrl;
-  final String category;
-  final bool isPopular;
-  final bool isVegetarian;
-  final bool isVegan;
-  final bool isGlutenFree;
-  final List<String> allergens;
-  final double? calories;
-  final List<String> availableAddons;
-  final String restaurantId;
+  final double rating;
   final String restaurantName;
-  final double? discountPrice;
-  final List<String> additives;
-  final bool isAvailable;
-  
+  final String restaurantId;
+  final String restaurantLocation;
+  final List<String> categories;
+  final bool isVegetarian;
+  final bool isSpicy;
+
   const MenuItem({
     required this.id,
     required this.name,
     required this.description,
     required this.price,
     required this.imageUrl,
-    required this.category,
-    this.isPopular = false,
+    required this.rating,
+    required this.restaurantName,
+    required this.restaurantId,
+    required this.restaurantLocation,
+    this.categories = const [],
     this.isVegetarian = false,
-    this.isVegan = false,
-    this.isGlutenFree = false,
-    this.allergens = const [],
-    this.calories,
-    this.availableAddons = const [],
-    this.restaurantId = '',
-    this.restaurantName = '',
-    this.discountPrice,
-    this.additives = const [],
-    this.isAvailable = true,
+    this.isSpicy = false,
   });
-  
+
   @override
   List<Object?> get props => [
     id,
@@ -48,19 +36,13 @@ class MenuItem extends Equatable {
     description,
     price,
     imageUrl,
-    category,
-    isPopular,
-    isVegetarian,
-    isVegan,
-    isGlutenFree,
-    allergens,
-    calories,
-    availableAddons,
-    restaurantId,
+    rating,
     restaurantName,
-    discountPrice,
-    additives,
-    isAvailable,
+    restaurantId,
+    restaurantLocation,
+    categories,
+    isVegetarian,
+    isSpicy,
   ];
   
   MenuItem copyWith({
@@ -69,19 +51,13 @@ class MenuItem extends Equatable {
     String? description,
     double? price,
     String? imageUrl,
-    String? category,
-    bool? isPopular,
-    bool? isVegetarian,
-    bool? isVegan,
-    bool? isGlutenFree,
-    List<String>? allergens,
-    double? calories,
-    List<String>? availableAddons,
-    String? restaurantId,
+    double? rating,
     String? restaurantName,
-    double? discountPrice,
-    List<String>? additives,
-    bool? isAvailable,
+    String? restaurantId,
+    String? restaurantLocation,
+    List<String>? categories,
+    bool? isVegetarian,
+    bool? isSpicy,
   }) {
     return MenuItem(
       id: id ?? this.id,
@@ -89,19 +65,13 @@ class MenuItem extends Equatable {
       description: description ?? this.description,
       price: price ?? this.price,
       imageUrl: imageUrl ?? this.imageUrl,
-      category: category ?? this.category,
-      isPopular: isPopular ?? this.isPopular,
-      isVegetarian: isVegetarian ?? this.isVegetarian,
-      isVegan: isVegan ?? this.isVegan,
-      isGlutenFree: isGlutenFree ?? this.isGlutenFree,
-      allergens: allergens ?? this.allergens,
-      calories: calories ?? this.calories,
-      availableAddons: availableAddons ?? this.availableAddons,
-      restaurantId: restaurantId ?? this.restaurantId,
+      rating: rating ?? this.rating,
       restaurantName: restaurantName ?? this.restaurantName,
-      discountPrice: discountPrice ?? this.discountPrice,
-      additives: additives ?? this.additives,
-      isAvailable: isAvailable ?? this.isAvailable,
+      restaurantId: restaurantId ?? this.restaurantId,
+      restaurantLocation: restaurantLocation ?? this.restaurantLocation,
+      categories: categories ?? this.categories,
+      isVegetarian: isVegetarian ?? this.isVegetarian,
+      isSpicy: isSpicy ?? this.isSpicy,
     );
   }
   
@@ -112,19 +82,13 @@ class MenuItem extends Equatable {
       'description': description,
       'price': price,
       'imageUrl': imageUrl,
-      'category': category,
-      'isPopular': isPopular,
-      'isVegetarian': isVegetarian,
-      'isVegan': isVegan,
-      'isGlutenFree': isGlutenFree,
-      'allergens': allergens,
-      'calories': calories,
-      'availableAddons': availableAddons,
-      'restaurantId': restaurantId,
+      'rating': rating,
       'restaurantName': restaurantName,
-      'discountPrice': discountPrice,
-      'additives': additives,
-      'isAvailable': isAvailable,
+      'restaurantId': restaurantId,
+      'restaurantLocation': restaurantLocation,
+      'categories': categories,
+      'isVegetarian': isVegetarian,
+      'isSpicy': isSpicy,
     };
   }
   
@@ -135,21 +99,13 @@ class MenuItem extends Equatable {
       description: json['description'] as String,
       price: (json['price'] as num).toDouble(),
       imageUrl: json['imageUrl'] as String,
-      category: json['category'] as String,
-      isPopular: json['isPopular'] ?? false,
-      isVegetarian: json['isVegetarian'] ?? false,
-      isVegan: json['isVegan'] ?? false,
-      isGlutenFree: json['isGlutenFree'] ?? false,
-      allergens: List<String>.from(json['allergens']),
-      calories: json['calories']?.toDouble(),
-      availableAddons: List<String>.from(json['availableAddons']),
-      restaurantId: json['restaurantId'] ?? '',
-      restaurantName: json['restaurantName'] ?? '',
-      discountPrice: json['discountPrice']?.toDouble(),
-      additives: json.containsKey('additives') && json['additives'] != null
-          ? List<String>.from(json['additives'])
-          : [],
-      isAvailable: json['isAvailable'] as bool? ?? true,
+      rating: (json['rating'] as num).toDouble(),
+      restaurantName: json['restaurantName'] as String,
+      restaurantId: json['restaurantId'] as String,
+      restaurantLocation: json['restaurantLocation'] as String,
+      categories: List<String>.from(json['categories'] ?? []),
+      isVegetarian: json['isVegetarian'] as bool? ?? false,
+      isSpicy: json['isSpicy'] as bool? ?? false,
     );
   }
 }

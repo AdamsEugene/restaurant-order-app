@@ -112,9 +112,11 @@ class Restaurant extends Equatable {
     };
   }
 
-  // Get popular items from the menu
-  List<MenuItem> get popularItems {
-    return menu.where((item) => item.isPopular).toList();
+  // Get top-rated items from the menu
+  List<MenuItem> get topRatedItems {
+    final sortedMenu = List<MenuItem>.from(menu);
+    sortedMenu.sort((a, b) => b.rating.compareTo(a.rating));
+    return sortedMenu.take(3).toList();
   }
 
   // Get vegetarian items from the menu
@@ -122,21 +124,25 @@ class Restaurant extends Equatable {
     return menu.where((item) => item.isVegetarian).toList();
   }
 
-  // Get vegan items from the menu
-  List<MenuItem> get veganItems {
-    return menu.where((item) => item.isVegan).toList();
+  // Get spicy items from the menu
+  List<MenuItem> get spicyItems {
+    return menu.where((item) => item.isSpicy).toList();
   }
 
   // Get menu items by category
   List<MenuItem> getItemsByCategory(String category) {
-    return menu.where((item) => item.category == category).toList();
+    return menu.where((item) => item.categories.contains(category)).toList();
   }
 
   // Get unique menu categories
   List<String> get menuCategories {
-    final categories = menu.map((item) => item.category).toSet().toList();
-    categories.sort();
-    return categories;
+    final categories = <String>{};
+    for (var item in menu) {
+      categories.addAll(item.categories);
+    }
+    final categoryList = categories.toList();
+    categoryList.sort();
+    return categoryList;
   }
   
   // Check if delivery is free

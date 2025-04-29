@@ -19,6 +19,7 @@ import '../screens/order/order_complete_screen.dart';
 import '../screens/order/track_order_screen.dart';
 import '../screens/promotions/special_offers_screen.dart';
 import '../screens/categories/category_screen.dart';
+import '../screens/search/search_screen.dart';
 import '../widgets/layout/main_layout.dart';
 
 class AppRouter {
@@ -187,9 +188,7 @@ class AppRouter {
           // Search Tab
           GoRoute(
             path: '/search',
-            builder: (context, state) => const Center(
-              child: Text('Search - Coming Soon'),
-            ),
+            builder: (context, state) => const SearchScreen(),
           ),
           // Cart Tab
           GoRoute(
