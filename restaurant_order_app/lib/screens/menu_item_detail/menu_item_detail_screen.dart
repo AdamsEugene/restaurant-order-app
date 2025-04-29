@@ -83,6 +83,14 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
     'No Meat (Vegetarian)'
   ];
   
+  final List<String> _fishOptions = [
+    'Tilapia', 
+    'Salmon', 
+    'Tuna', 
+    'Mackerel', 
+    'No Fish'
+  ];
+  
   final List<String> _riceTypes = [
     'Plain White Rice',
     'Basmati Rice',
@@ -538,7 +546,7 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          _buildDropdown(['Tilapia', 'Salmon', 'Tuna', 'Mackerel', 'No Fish'], _selectedMeat, (newValue) {
+          _buildDropdown(_fishOptions, _selectedMeat, (newValue) {
             setState(() {
               _selectedMeat = newValue;
             });
@@ -720,6 +728,11 @@ class _MenuItemDetailScreenState extends State<MenuItemDetailScreen> {
   
   // Helper widget for dropdowns
   Widget _buildDropdown(List<String> options, String? selected, Function(String?) onChanged) {
+    // Check if selected value exists in options, if not use the first item
+    if (selected != null && !options.contains(selected)) {
+      selected = options.isNotEmpty ? options[0] : null;
+    }
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
