@@ -97,9 +97,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   @override
   Widget build(BuildContext context) {
     final MenuItem? menuItem = widget.orderDetails['menuItem'] as MenuItem?;
-    final int quantity = widget.orderDetails['quantity'] as int;
-    final String customizations = widget.orderDetails['customizations'] as String;
-    final String notes = widget.orderDetails['notes'] as String;
+    final int quantity = widget.orderDetails['quantity'] as int? ?? 1;
+    final String customizations = widget.orderDetails['customizations'] as String? ?? '';
+    final String notes = widget.orderDetails['notes'] as String? ?? '';
     final Restaurant? restaurant = widget.orderDetails['restaurant'] as Restaurant?;
     
     // Use finalPrice from menu item details if available, otherwise calculate from base price
