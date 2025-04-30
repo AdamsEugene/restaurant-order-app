@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../config/theme.dart';
 import 'dart:math' as math;
 
 class PaymentMethodsScreen extends StatefulWidget {
@@ -278,7 +279,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
 
   Widget _buildPaymentOption(String id, String name, String imagePath) {
     final isSelected = _selectedPaymentMethod == id;
-    final Color primaryColor = Colors.deepOrange;
+    final Color primaryColor = AppTheme.primaryColor;
 
     return GestureDetector(
       onTap: () {
@@ -627,17 +628,17 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.orange.shade50 : Colors.white,
+          color: isSelected ? AppTheme.primaryColor.withOpacity(0.1) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? Colors.deepOrange : Colors.grey.shade300,
+            color: isSelected ? AppTheme.primaryColor : Colors.grey.shade300,
             width: 2,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.deepOrange : Colors.black,
+            color: isSelected ? AppTheme.primaryColor : Colors.black,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -713,9 +714,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.green[50],
+                  color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
@@ -724,11 +725,11 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green.withOpacity(0.3)),
+                        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.credit_card,
-                        color: Colors.green,
+                        color: AppTheme.primaryColor,
                         size: 28,
                       ),
                     ),
@@ -745,10 +746,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                         ),
                         Text(
                           '\$${totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.green,
+                            color: AppTheme.primaryColor,
                           ),
                         ),
                       ],
@@ -877,6 +878,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               child: ElevatedButton(
                 onPressed: _processPayment,
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
@@ -893,6 +896,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
             ),
           ],
         ),
+        margin: const EdgeInsets.only(bottom: 16),
       ),
     );
   }

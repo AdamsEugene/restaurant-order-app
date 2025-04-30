@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/menu_item.dart';
 import '../../models/restaurant.dart';
+import '../../config/theme.dart';
 
 class OrderConfirmationScreen extends StatefulWidget {
   final Map<String, dynamic> orderDetails;
@@ -241,7 +242,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).primaryColor,
+                                            color: AppTheme.primaryColor,
                                           ),
                                         ),
                                       ] else ...[
@@ -346,7 +347,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         // Delivery/Pickup Toggle
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.grey[200],
+                            color: Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -360,7 +361,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: isDelivery ? Colors.deepOrange : Colors.transparent,
+                                    color: isDelivery ? AppTheme.primaryColor : Colors.transparent,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
@@ -382,7 +383,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: !isDelivery ? Colors.deepOrange : Colors.transparent,
+                                    color: !isDelivery ? AppTheme.primaryColor : Colors.transparent,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
@@ -626,42 +627,29 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             children: [
               Expanded(
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
                   onPressed: () {
-                    // Calculate total amount to pass to payment screen
-                    final double totalPrice = itemPrice;
-                    final double deliveryFee = isDelivery ? this.deliveryFee : 0.0;
-                    final double tax = totalPrice * 0.05;
-                    final double totalAmount = totalPrice + deliveryFee + tax;
-                    
-                    // Create updated delivery details
-                    final Map<String, String> deliveryDetails = {
-                      'method': isDelivery ? 'delivery' : 'pickup',
-                      'address': isDelivery ? addressController.text : '42 Independence Avenue, Accra, Ghana',
-                      'phone': phoneController.text,
-                      'estimatedTime': deliveryTime,
-                    };
-                    
-                    // Navigate to payment methods screen
+                    // Navigate to payment methods with order details
                     context.go('/payment-methods', extra: {
-                      'menuItem': menuItem,
-                      'quantity': quantity,
-                      'customizations': customizations,
-                      'notes': notes,
-                      'restaurant': restaurant,
-                      'totalAmount': totalAmount,
-                      'deliveryDetails': deliveryDetails,
+                      ...widget.orderDetails,
+                      'total': totalAmount,
+                      'tax': tax,
+                      'deliveryFee': isDelivery ? deliveryFee : 0.0,
                       'isDelivery': isDelivery,
-                      'deliveryFee': deliveryFee,
+                      'address': isDelivery ? addressController.text : 'Pickup',
+                      'phone': phoneController.text,
+                      'deliveryTime': deliveryTime,
                     });
                   },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                  ),
                   child: const Text(
-                    'Continue to Payment',
+                    'Proceed to Payment',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

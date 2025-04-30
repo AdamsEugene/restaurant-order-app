@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:math';
+import 'dart:math' as math;
+import '../../config/theme.dart';
 import '../../models/menu_item.dart';
 import '../../models/restaurant.dart';
 
@@ -21,8 +22,30 @@ class ReceiptScreen extends StatefulWidget {
   State<ReceiptScreen> createState() => _ReceiptScreenState();
 }
 
-class _ReceiptScreenState extends State<ReceiptScreen> {
+class _ReceiptScreenState extends State<ReceiptScreen> with SingleTickerProviderStateMixin {
   bool _isCodeCopied = false;
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
@@ -31,9 +54,18 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Receipt code copied to clipboard'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            const Text('Receipt code copied to clipboard'),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
     
@@ -47,6 +79,25 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     });
   }
 
+  void _shareReceipt() {
+    // In a real app, this would share the receipt
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.info, color: Colors.white),
+            const SizedBox(width: 8),
+            const Text('Share receipt feature would be implemented here'),
+          ],
+        ),
+        backgroundColor: AppTheme.primaryColor,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final MenuItem? menuItem = widget.orderDetails['menuItem'] as MenuItem?;
@@ -55,6 +106,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     final String notes = widget.orderDetails['notes'] as String;
     final Restaurant? restaurant = widget.orderDetails['restaurant'] as Restaurant?;
     final double totalAmount = widget.orderDetails['totalAmount'] as double? ?? 0.0;
+    final String paymentMethod = widget.orderDetails['paymentMethod'] as String? ?? 'Card';
     
     // Format current date
     final now = DateTime.now();
@@ -88,6 +140,13 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           ),
           onPressed: () => context.go('/home'),
         ),
+        title: const Text(
+          'Receipt',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           IconButton(
             icon: Container(
@@ -106,395 +165,455 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
               ),
               child: const Icon(Icons.share, color: Colors.black),
             ),
-            onPressed: () {
-              // In a real app, this would share the receipt
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Share receipt feature would be implemented here'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
+            onPressed: _shareReceipt,
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Success check icon
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.green.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
+      body: FadeTransition(
+        opacity: _animation,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Success check icon
+                SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, -0.5),
+                    end: Offset.zero,
+                  ).animate(_animation),
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.3),
+                          spreadRadius: 2,
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 48,
+                    ),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.check,
-                  color: Colors.white,
-                  size: 48,
+                
+                const SizedBox(height: 16),
+                SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, -0.3),
+                    end: Offset.zero,
+                  ).animate(_animation),
+                  child: const Text(
+                    'Payment Successful!',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
-              
-              const SizedBox(height: 16),
-              const Text(
-                'Payment Successful!',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 8),
+                Text(
+                  'Order #${widget.orderId}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Order #${widget.orderId}',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-              ),
-              
-              const SizedBox(height: 32),
-              
-              // Receipt Card
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Restaurant info
-                      if (restaurant != null) ...[
-                        Center(
-                          child: Column(
+                
+                const SizedBox(height: 32),
+                
+                // Receipt Card
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Restaurant info
+                        if (restaurant != null) ...[
+                          Center(
+                            child: Column(
+                              children: [
+                                Text(
+                                  restaurant.name,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  restaurant.address,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Divider(height: 32),
+                        ],
+                        
+                        // Order info
+                        _buildInfoRow('Date:', orderDate),
+                        const SizedBox(height: 8),
+                        _buildInfoRow('Time:', orderTime),
+                        const SizedBox(height: 8),
+                        _buildInfoRow('Delivery Estimate:', deliveryEstimate),
+                        const SizedBox(height: 8),
+                        _buildInfoRow('Payment Method:', _formatPaymentMethod(paymentMethod)),
+                        
+                        const Divider(height: 32),
+                        
+                        // Order items
+                        if (menuItem != null) ...[
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      spreadRadius: 1,
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    menuItem.imageUrl,
+                                    width: 60,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 60,
+                                        height: 60,
+                                        color: Colors.grey[300],
+                                        child: const Icon(
+                                          Icons.restaurant,
+                                          color: Colors.white,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${quantity}x ${menuItem.name}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    if (customizations.isNotEmpty)
+                                      Text(
+                                        'Customizations: $customizations',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    if (notes.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Notes: $notes',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
                               Text(
-                                restaurant.name,
+                                '\$${(menuItem.price * quantity).toStringAsFixed(2)}',
                                 style: const TextStyle(
-                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
-                              const SizedBox(height: 4),
+                            ],
+                          ),
+                        ],
+                        
+                        const Divider(height: 32),
+                        
+                        // Order total
+                        _buildInfoRow('Subtotal', '\$${(totalAmount - 2.0 - (totalAmount * 0.05)).toStringAsFixed(2)}'),
+                        const SizedBox(height: 8),
+                        _buildInfoRow('Delivery Fee', '\$2.00'),
+                        const SizedBox(height: 8),
+                        _buildInfoRow('Tax (5%)', '\$${(totalAmount * 0.05).toStringAsFixed(2)}'),
+                        const Divider(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Total',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              '\$${totalAmount.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+                
+                // QR Code and Receipt Code
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.qr_code, color: AppTheme.primaryColor),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Show this code at pickup',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // QR Code
+                        Container(
+                          width: 180,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                spreadRadius: 1,
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: CustomPaint(
+                            painter: ReceiptQRCodePainter(code: widget.receiptCode),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Receipt Code
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               Text(
-                                restaurant.address,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
+                                widget.receiptCode,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 2,
+                                  fontFamily: 'monospace',
                                 ),
-                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: _isCodeCopied ? Colors.green.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: Icon(
+                                    _isCodeCopied ? Icons.check : Icons.copy,
+                                    color: _isCodeCopied ? Colors.green : Colors.grey[600],
+                                  ),
+                                  onPressed: () => _copyToClipboard(widget.receiptCode),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        const Divider(height: 32),
-                      ],
-                      
-                      // Order info
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Date:',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                            ),
+                        
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.amber.withOpacity(0.3)),
                           ),
-                          Text(orderDate),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Time:',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                          Text(orderTime),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Delivery Estimate:',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                          Text(deliveryEstimate),
-                        ],
-                      ),
-                      
-                      const Divider(height: 32),
-                      
-                      // Order items
-                      if (menuItem != null) ...[
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                menuItem.imageUrl,
-                                width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: 60,
-                                    height: 60,
-                                    color: Colors.grey[300],
-                                    child: const Icon(
-                                      Icons.restaurant,
-                                      color: Colors.white,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${quantity}x ${menuItem.name}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info_outline, color: Colors.amber[700], size: 20),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  'Your receipt code will be verified upon pickup',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
                                   ),
-                                  const SizedBox(height: 4),
-                                  if (customizations.isNotEmpty)
-                                    Text(
-                                      'Customizations: $customizations',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  if (notes.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Notes: $notes',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ],
+                                ),
                               ),
-                            ),
-                            Text(
-                              '\$${(menuItem.price * quantity).toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
-                      
-                      const Divider(height: 32),
-                      
-                      // Order total
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Subtotal'),
-                          Text('\$${(totalAmount - 2.0 - (totalAmount * 0.05)).toStringAsFixed(2)}'),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Text('Delivery Fee'),
-                          Text('\$2.00'),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Tax (5%)'),
-                          Text('\$${(totalAmount * 0.05).toStringAsFixed(2)}'),
-                        ],
-                      ),
-                      const Divider(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Total',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            '\$${totalAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 32),
-              
-              // QR Code and Receipt Code
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Show this code at pickup',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // QR Code
-                      Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey[300]!),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: CustomPaint(
-                          painter: ReceiptQRCodePainter(code: widget.receiptCode),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Receipt Code
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              widget.receiptCode,
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 2,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              icon: Icon(
-                                _isCodeCopied ? Icons.check : Icons.copy,
-                                color: _isCodeCopied ? Colors.green : Colors.grey[600],
-                              ),
-                              onPressed: () => _copyToClipboard(widget.receiptCode),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Your receipt code will be verified upon pickup',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Track Order Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Navigate to order tracking screen
-                    context.go('/order-tracking/${widget.orderId}', extra: widget.orderDetails);
-                  },
-                  icon: const Icon(Icons.location_on),
-                  label: const Text('Track Order'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Back to Menu Button
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => context.go('/home'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                
+                const SizedBox(height: 24),
+                
+                // Track Order Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // Navigate to order tracking screen
+                      context.go('/order-tracking/${widget.orderId}', extra: widget.orderDetails);
+                    },
+                    icon: const Icon(Icons.location_on),
+                    label: const Text(
+                      'Track Order',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 2,
                     ),
                   ),
-                  child: const Text('Back to Menu'),
                 ),
-              ),
-              
-              const SizedBox(height: 32),
-            ],
+                
+                const SizedBox(height: 16),
+                
+                // Back to Menu Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.go('/home'),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text(
+                      'Back to Menu',
+                      style: TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.black87,
+                      side: BorderSide(color: Colors.grey[300]!),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+  
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey[700],
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+  
+  String _formatPaymentMethod(String method) {
+    if (method.startsWith('momo_')) {
+      final provider = method.split('_').last;
+      return 'Mobile Money (${provider.toUpperCase()})';
+    } else if (method.startsWith('card_')) {
+      return 'Credit Card';
+    } else if (method.startsWith('qr_')) {
+      final provider = method.split('_').last;
+      return 'QR Code (${provider.toUpperCase()})';
+    } else if (method == 'cash') {
+      return 'Cash on Delivery';
+    }
+    return method;
   }
 }
 
@@ -505,7 +624,7 @@ class ReceiptQRCodePainter extends CustomPainter {
   
   @override
   void paint(Canvas canvas, Size size) {
-    final random = Random(code.hashCode); // Using code as a seed
+    final random = math.Random(code.hashCode); // Using code as a seed
     
     // Draw white background
     final bgPaint = Paint()
@@ -551,7 +670,7 @@ class ReceiptQRCodePainter extends CustomPainter {
     );
     
     final logoPaint = Paint()
-      ..color = Colors.green
+      ..color = AppTheme.primaryColor
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
       RRect.fromRectAndRadius(centerRect, Radius.circular(centerSize / 4)),

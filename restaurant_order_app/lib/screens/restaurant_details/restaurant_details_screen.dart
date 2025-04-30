@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/restaurant.dart';
 import '../../services/api/restaurant_api_service.dart';
+import '../../config/theme.dart';
 import 'package:http/http.dart' as http;
 
 class RestaurantDetailsScreen extends StatefulWidget {
@@ -234,13 +235,13 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                        color: AppTheme.primaryColor.withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         restaurant!.cuisineType,
                                         style: TextStyle(
-                                          color: Theme.of(context).primaryColor,
+                                          color: AppTheme.primaryColor,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -391,7 +392,7 @@ class _RestaurantDetailsScreenState extends State<RestaurantDetailsScreen> {
                                               '\$${menuItem.price.toStringAsFixed(2)}',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).primaryColor,
+                                                color: AppTheme.primaryColor,
                                               ),
                                             ),
                                             const SizedBox(width: 8),
