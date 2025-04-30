@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../config/theme.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -11,32 +12,118 @@ class ProfileScreen extends StatelessWidget {
       'name': 'John Doe',
       'email': 'john.doe@example.com',
       'phone': '+1 234 567 8900',
+      'memberSince': 'November 2023',
+      'ordersCount': '12',
     };
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Profile'),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile header with avatar and name
-            Center(
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.grey.shade200,
-                    child: Icon(
-                      Icons.person,
-                      size: 50,
-                      color: Colors.grey.shade400,
+      body: CustomScrollView(
+        slivers: [
+          // Profile Header with Gradient
+          SliverToBoxAdapter(
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                // Gradient Background
+                Container(
+                  height: 180,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: AppTheme.primaryGradient,
+                    ),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                ),
+                
+                // Profile Picture
+                Positioned(
+                  top: 110,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 4,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 60,
+                      backgroundColor: Colors.white,
+                      child: CircleAvatar(
+                        radius: 56,
+                        backgroundColor: Colors.grey.shade200,
+                        child: Icon(
+                          Icons.person,
+                          size: 50,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Back button and settings
+                Positioned(
+                  top: 40,
+                  left: 0,
+                  right: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            context.go('/home');
+                          },
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        ),
+                        const Text(
+                          'My Profile',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            // Navigate to settings
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Settings coming soon')),
+                            );
+                          },
+                          icon: const Icon(Icons.settings, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // User Info
+          SliverToBoxAdapter(
+            child: Container(
+              margin: const EdgeInsets.only(top: 80),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
                   Text(
                     userData['name'] ?? 'User',
                     style: const TextStyle(
@@ -63,202 +150,292 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Stats cards
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildStatCard(
+                        context: context,
+                        icon: Icons.receipt_long,
+                        title: 'Orders',
+                        value: userData['ordersCount'] ?? '0',
+                      ),
+                      _buildStatCard(
+                        context: context,
+                        icon: Icons.calendar_today,
+                        title: 'Member Since',
+                        value: userData['memberSince'] ?? 'New',
+                        isTextValue: true,
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
-            const SizedBox(height: 32),
-            
-            // Account Section
-            const Text(
-              'Account',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildSettingsItem(
-              context,
-              icon: Icons.person_outline,
-              title: 'Edit Profile',
-              onTap: () {
-                // Navigate to edit profile
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Edit Profile coming soon')),
-                );
-              },
-            ),
-            _buildSettingsItem(
-              context,
-              icon: Icons.location_on_outlined,
-              title: 'Saved Addresses',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Saved Addresses coming soon')),
-                );
-              },
-            ),
-            _buildSettingsItem(
-              context,
-              icon: Icons.credit_card_outlined,
-              title: 'Payment Methods',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Payment Methods coming soon')),
-                );
-              },
-            ),
-            
-            const SizedBox(height: 24),
-            // Orders & Favorites Section
-            const Text(
-              'My Activity',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildSettingsItem(
-              context,
-              icon: Icons.receipt_long_outlined,
-              title: 'Order History',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Order History coming soon')),
-                );
-              },
-            ),
-            _buildSettingsItem(
-              context,
-              icon: Icons.favorite_border_outlined,
-              title: 'Favorite Restaurants',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Favorites coming soon')),
-                );
-              },
-            ),
-            
-            const SizedBox(height: 24),
-            // Preferences Section
-            const Text(
-              'Preferences',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildSettingsItem(
-              context,
-              icon: Icons.notifications_outlined,
-              title: 'Notifications',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Notifications coming soon')),
-                );
-              },
-            ),
-            _buildSettingsItem(
-              context,
-              icon: Icons.language_outlined,
-              title: 'Language',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Language settings coming soon')),
-                );
-              },
-            ),
-            
-            const SizedBox(height: 24),
-            // Support Section
-            const Text(
-              'Support',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildSettingsItem(
-              context,
-              icon: Icons.help_outline,
-              title: 'Help Center',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Help Center coming soon')),
-                );
-              },
-            ),
-            _buildSettingsItem(
-              context,
-              icon: Icons.info_outline,
-              title: 'About Us',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('About Us coming soon')),
-                );
-              },
-            ),
-            
-            const SizedBox(height: 32),
-            // Logout button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Show logout confirmation dialog
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Log Out'),
-                      content: const Text('Are you sure you want to log out?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            // In a real app, dispatch logout action to auth bloc
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Logged out successfully')),
-                            );
-                          },
-                          child: const Text('Log Out'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.red,
+          ),
+          
+          // Main Content
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Account Section
+                  _buildSectionHeader(context, title: 'Account'),
+                  const SizedBox(height: 16),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.person_outline,
+                    title: 'Edit Profile',
+                    subtitle: 'Change your personal information',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Edit Profile coming soon')),
+                      );
+                    },
+                  ),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.location_on_outlined,
+                    title: 'Saved Addresses',
+                    subtitle: 'Manage your delivery addresses',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Saved Addresses coming soon')),
+                      );
+                    },
+                  ),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.credit_card_outlined,
+                    title: 'Payment Methods',
+                    subtitle: 'Manage your payment options',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Payment Methods coming soon')),
+                      );
+                    },
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Orders & Favorites Section
+                  _buildSectionHeader(context, title: 'My Activity'),
+                  const SizedBox(height: 16),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Order History',
+                    subtitle: 'View your past orders',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Order History coming soon')),
+                      );
+                    },
+                  ),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.favorite_border_outlined,
+                    title: 'Favorite Restaurants',
+                    subtitle: 'View your saved restaurants',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Favorites coming soon')),
+                      );
+                    },
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Preferences Section
+                  _buildSectionHeader(context, title: 'Preferences'),
+                  const SizedBox(height: 16),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.notifications_outlined,
+                    title: 'Notifications',
+                    subtitle: 'Manage your notification settings',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Notifications coming soon')),
+                      );
+                    },
+                  ),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.language_outlined,
+                    title: 'Language',
+                    subtitle: 'Change app language',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Language settings coming soon')),
+                      );
+                    },
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Support Section
+                  _buildSectionHeader(context, title: 'Support'),
+                  const SizedBox(height: 16),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.help_outline,
+                    title: 'Help Center',
+                    subtitle: 'Get help with your orders',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Help Center coming soon')),
+                      );
+                    },
+                  ),
+                  _buildSettingsItem(
+                    context,
+                    icon: Icons.info_outline,
+                    title: 'About Us',
+                    subtitle: 'Learn more about our restaurant',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('About Us coming soon')),
+                      );
+                    },
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // Logout button
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Log Out'),
+                      onPressed: () {
+                        // Show logout confirmation dialog
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Log Out'),
+                            content: const Text('Are you sure you want to log out?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  // In a real app, dispatch logout action to auth bloc
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Logged out successfully')),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text('Log Out'),
+                              ),
+                            ],
                           ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade50,
+                        foregroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ],
+                      ),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-                child: const Text(
-                  'Log Out',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+  
+  Widget _buildStatCard({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String value,
+    bool isTextValue = false,
+  }) {
+    return Container(
+      width: 150,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon, 
+            color: AppTheme.primaryColor,
+            size: 28,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isTextValue ? 14 : 24,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryTextColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, {required String title}) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Divider(
+            color: Colors.grey.shade300,
+            thickness: 1,
+          ),
+        ),
+      ],
     );
   }
 
@@ -266,26 +443,49 @@ class ProfileScreen extends StatelessWidget {
     BuildContext context, {
     required IconData icon,
     required String title,
+    required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 0,
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: Theme.of(context).primaryColor,
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            color: AppTheme.primaryColor,
+          ),
         ),
-        title: Text(title),
-        trailing: const Icon(Icons.chevron_right),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(subtitle),
+        trailing: const Icon(
+          Icons.chevron_right,
+          color: AppTheme.primaryColor,
+        ),
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
     );
